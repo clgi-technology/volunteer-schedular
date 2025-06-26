@@ -1,4 +1,5 @@
-🙌 Volunteer Schedule Automation
+# 🙌 Volunteer Schedule Automation
+
 (with Tally + Zapier + GitHub Actions + ClickSend + GitHub Pages)
 
 This project lets volunteers submit their availability for multiple roles, dates, and times using a form (via Tally.so).
@@ -13,7 +14,7 @@ Used to send SMS reminders via ClickSend
 
 Rendered in an interactive HTML calendar with role filtering and published on GitHub Pages
 
-✨ Features
+# ✨ Features
 📋 Accepts structured input for multiple shifts per volunteer
 
 🔁 Fully automated using GitHub Actions
@@ -26,7 +27,7 @@ Rendered in an interactive HTML calendar with role filtering and published on Gi
 
 🔐 Credentials managed securely with GitHub Secrets
 
-📁 Project Structure
+# 📁 Project Structure
 
 ```
 .
@@ -43,7 +44,7 @@ Rendered in an interactive HTML calendar with role filtering and published on Gi
 └── README.md
 ```
 
-🧾 How the System Works
+# 🧾 How the System Works
 Volunteer fills out a Tally form
 
 Name, phone number
@@ -68,7 +69,7 @@ Generates interactive calendar HTML + JSON
 
 Publishes calendar files to GitHub Pages
 
-📤 Example Tally Input (via Form)
+# 📤 Example Tally Input (via Form)
 
 ```
 Name: Alice Johnson  
@@ -93,7 +94,7 @@ Zapier converts this to:
 Hi Alice Johnson! You're scheduled to Usher on Monday, July 7 at 6:00 PM. Thank you for serving!
 ```
 
-🗓️ Interactive Calendar Output
+# 🗓️ Interactive Calendar Output
 Published at:
 👉 https://your-username.github.io/volunteer-scheduler
 
@@ -111,7 +112,7 @@ Date	Time	Volunteer	Role
 2025-07-07	18:00	Alice Johnson	Usher
 2025-07-09	09:00	Alice Johnson	Greeter
 
-🔧 Setup Instructions
+# 🔧 Setup Instructions
 1. ☁️ Create Your GitHub Repository
 Create a new public or private repository named volunteer-scheduler.
 
@@ -218,7 +219,7 @@ Source: docs/ folder
 URL: https://your-username.github.io/volunteer-scheduler
 ```
 
-🧪 Local Testing
+# 🧪 Local Testing
 ```
 # Set environment variables for testing
 export CLICKSEND_USERNAME="your_email@example.com"
@@ -229,13 +230,13 @@ python volunteer_schedule.py --name "Alice" --phone "+1234567890" --shifts '[{"d
 python generate_calendar.py
 ```
 
-✅ Requirements (requirements.txt)
+# ✅ Requirements (requirements.txt)
 ```
 clicksend-client
 PyYAML
 ```
 
-🛠️ Future Improvements
+# 🛠️ Future Improvements
 Send calendar invites (ICS) via email
 
 Web dashboard to manage volunteers directly
@@ -245,7 +246,7 @@ Export or sync calendar to Google Calendar or Outlook
 📘 License
 MIT License
 
-🙏 Acknowledgments
+# 🙏 Acknowledgments
 ClickSend API
 
 Tally.so
