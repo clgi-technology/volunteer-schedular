@@ -27,9 +27,8 @@ Rendered in an interactive HTML calendar with role filtering and published on Gi
 🔐 Credentials managed securely with GitHub Secrets
 
 📁 Project Structure
-bash
-Copy
-Edit
+
+```
 .
 ├── .github/
 │   └── workflows/
@@ -42,6 +41,8 @@ Edit
 ├── volunteer_input.yaml            # Full volunteer schedule (append-only)
 ├── requirements.txt                # Python dependencies
 └── README.md
+```
+
 🧾 How the System Works
 Volunteer fills out a Tally form
 
@@ -68,28 +69,30 @@ Generates interactive calendar HTML + JSON
 Publishes calendar files to GitHub Pages
 
 📤 Example Tally Input (via Form)
-yaml
-Copy
-Edit
+
+```
 Name: Alice Johnson  
 Phone: +1234567890  
 Shifts:  
 2025-07-07 18:00 Usher  
 2025-07-09 09:00 Greeter
+```
+
 Zapier converts this to:
 
-json
-Copy
-Edit
+```
 "shifts": [
   { "date": "2025-07-07", "time": "18:00", "role": "Usher" },
   { "date": "2025-07-09", "time": "09:00", "role": "Greeter" }
 ]
+
+```
+
 💬 Example SMS
-vbnet
-Copy
-Edit
+```
 Hi Alice Johnson! You're scheduled to Usher on Monday, July 7 at 6:00 PM. Thank you for serving!
+```
+
 🗓️ Interactive Calendar Output
 Published at:
 👉 https://your-username.github.io/volunteer-scheduler
@@ -116,15 +119,15 @@ Create a new public or private repository named volunteer-scheduler.
 Go to Repo → Settings → Secrets → Actions → New repository secret, and add:
 
 Secret Name	Description
+```
 CLICKSEND_USERNAME	Your ClickSend email login
 CLICKSEND_API_KEY	Your ClickSend API key
-
+```
 3. 📄 Define the GitHub Action
+```
 File: .github/workflows/send_schedule.yml
-
-yaml
-Copy
-Edit
+```
+```
 name: Process Volunteer Submission
 
 on:
@@ -171,6 +174,8 @@ jobs:
           mkdir -p docs
           cp calendar.html docs/
           cp volunteer_schedule.json docs/
+```
+
 4. 🧠 Zapier Setup
 Trigger: New Tally form submission
 
@@ -179,24 +184,20 @@ Zapier Step: Code or Formatter to convert shifts text into JSON list
 Action: POST to GitHub REST API
 
 Zapier Webhook POST:
-
+```
 URL:
 https://api.github.com/repos/your-username/volunteer-scheduler/actions/workflows/send_schedule.yml/dispatches
-
+```
 Headers:
-
-json
-Copy
-Edit
+```
 {
   "Authorization": "Bearer YOUR_GITHUB_PAT",
   "Accept": "application/vnd.github.v3+json"
 }
 Body:
 
-json
-Copy
-Edit
+```
+```
 {
   "ref": "main",
   "inputs": {
@@ -205,19 +206,20 @@ Edit
     "shifts": "[{\"date\":\"2025-07-07\", \"time\":\"18:00\", \"role\":\"Usher\"}, {\"date\":\"2025-07-09\", \"time\":\"09:00\", \"role\":\"Greeter\"}]"
   }
 }
+```
+
 🔐 Use a GitHub PAT with workflow scope and store it securely in Zapier.
 
 5. 🌐 Enable GitHub Pages
 Go to: Repo Settings → Pages
 
 Source: docs/ folder
-
+```
 URL: https://your-username.github.io/volunteer-scheduler
+```
 
 🧪 Local Testing
-bash
-Copy
-Edit
+```
 # Set environment variables for testing
 export CLICKSEND_USERNAME="your_email@example.com"
 export CLICKSEND_API_KEY="your_api_key"
@@ -225,11 +227,14 @@ export CLICKSEND_API_KEY="your_api_key"
 # Run scripts manually
 python volunteer_schedule.py --name "Alice" --phone "+1234567890" --shifts '[{"date": "2025-07-07", "time": "18:00", "role": "Usher"}]'
 python generate_calendar.py
+```
+
 ✅ Requirements (requirements.txt)
-Copy
-Edit
+```
 clicksend-client
 PyYAML
+```
+
 🛠️ Future Improvements
 Send calendar invites (ICS) via email
 
