@@ -253,4 +253,67 @@ Tally.so
 
 Zapier
 
-All our amazing volunteers ❤️
+All our amazing volunteers Awesome! Here's how we'll proceed with Option 1: a fully GitHub-native volunteer scheduler using a static HTML form, GitHub Actions, and GitHub Secrets.
+⸻
+✅ Step-by-Step Build Plan
+1. 🔐 GitHub Secrets Setup
+You'll need to add the following secrets to your repository:
+Secret NameDescription
+CLICKSEND_USERNAMEYour ClickSend email login
+CLICKSEND_API_KEYYour ClickSend API key
+GH_PATGitHub Personal Access Token (for form submission)
+⸻
+2. 🧾 GitHub Action: process_submission.yml
+This action will:
+Accept manual or API-triggered submissions
+Append to volunteer_input.yaml
+Send SMS via ClickSend
+Generate and publish the calendar
+✅ I’ll generate this file for you shortly.
+⸻
+3. 🌐 Static HTML Form (form/index.html)
+This form will:
+Collect name, phone, and shifts
+Use JavaScript to call the GitHub API and trigger the workflow
+Require the GH_PAT to be injected securely (e.g., via Netlify environment variable or GitHub Pages JS obfuscation)
+✅ I’ll generate this file for you too.
+⸻
+4. 🐍 Python Scripts
+volunteer_schedule.py: Appends to YAML and sends SMS
+generate_calendar.py: Builds calendar HTML + JSON
+✅ You already have these, but I can help refactor them to support this new flow if needed.
+⸻
+✅ Next Step
+I’ll now generate the following files:
+.github/workflows/process_submission.yml
+form/index.html
+Let’s start with that.
+
+✅ The following files have been generated for your GitHub-native volunteer scheduler:
+⸻
+📄 .github/workflows/process_submission.yml
+This GitHub Action:
+Triggers manually or via API
+Uses secrets for ClickSend
+Runs your Python scripts to append data, send SMS, and regenerate the calendar
+⸻
+🌐 form/index.html
+A static HTML form that:
+Collects volunteer name, phone, and shifts
+Sends a POST request to the GitHub API to trigger the workflow
+Requires a GitHub PAT (to be injected securely)
+⸻
+🔐 Next Steps
+Replace placeholders:
+In form/index.html, update:
+"your-username" → your GitHub username
+"YOUR_GITHUB_PAT" → inject securely via environment variable or obfuscation
+Add GitHub Secrets:
+CLICKSEND_USERNAME
+CLICKSEND_API_KEY
+GH_PAT (optional if not using from frontend)
+Deploy the form:
+Place form/index.html in your docs/ folder to serve it via GitHub Pages
+Or host it on Netlify/Vercel with environment variable injec
+
+
