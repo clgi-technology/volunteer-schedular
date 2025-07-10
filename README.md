@@ -82,15 +82,15 @@ python generate_calendar.py
 
 ```
 ⸻
-🛠️ Optional Enhancements
+## 🛠️ Optional Enhancements
 • Send calendar invites (ICS) via email
 • Web dashboard to manage volunteers directly
 • Export or sync calendar to Google Calendar or Outlook
 ⸻
-📘 License
+## 📘 License
 MIT License
 ⸻
-🙏 Acknowledgments
+## 🙏 Acknowledgments
 • GitHub Actions
 • GitHub Pages
 • All our amazing volunteers
