@@ -70,7 +70,8 @@ Go to **Repo → Settings → Secrets → Actions → New repository secret**, a
 
 ## 🧪 Local Testing
 
-```bash
+```
+bash
 # Set environment variables for testing
 export EMAIL_SENDER="your_email@example.com"
 export EMAIL_PASSWORD="your_email_password"
@@ -78,6 +79,7 @@ export EMAIL_PASSWORD="your_email_password"
 # Run scripts manually
 python volunteer_schedule.py --name "Alice" --phone "+1234567890" --shifts '[{"date": "2025-07-15", "time": "10:00", "role": "Greeter"}]'
 python generate_calendar.py
+
 ```
 ⸻
 🛠️ Optional Enhancements
