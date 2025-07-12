@@ -94,12 +94,12 @@ function renderCalendar(data) {
   tableBody.innerHTML = '';
   data.forEach(entry => {
     const row = document.createElement('tr');
-    row.innerHTML = `
+    row.innerHTML = 
       <td>${entry.date}</td>
       <td>${entry.time}</td>
       <td>${entry.volunteer}</td>
       <td>${entry.role}</td>
-    `;
+    ;
     tableBody.appendChild(row);
   });
 }
