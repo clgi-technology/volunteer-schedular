@@ -3,6 +3,8 @@ name: Process All Volunteers
 on:
   workflow_dispatch:
   repository_dispatch:
+  schedule:
+    - cron: '0 * * * *'  # Runs every hour
 
 permissions:
   contents: write
