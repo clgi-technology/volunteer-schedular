@@ -31,6 +31,6 @@ body:
           {"date":"2025-07-07","time":"18:00","role":"Usher"},
           {"date":"2025-07-09","time":"09:00","role":"Greeter"}
         ]
-      placeholder: Enter shifts as JSON objects
+      placeholder: Enter your shifts as JSON text here
     validations:
       required: true
