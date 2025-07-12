@@ -1,41 +1,43 @@
-name: Process Volunteer Submission
+name: Process Submission
 
 on:
   workflow_dispatch:
   repository_dispatch:
-  # You can customize triggers as needed, e.g., on push or API call
+  # Could be triggered by form submission webhook or API call
 
 jobs:
   process:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Process volunteer schedule
-      env:
-        CLICKSEND_USERNAME: ${{ secrets.CLICKSEND_USERNAME }}
-        CLICKSEND_API_KEY: ${{ secrets.CLICKSEND_API_KEY }}
-      run: |
-        python volunteer_schedule.py --name "${{ github.event.inputs.name }}" --phone "${{ github.event.inputs.phone }}" --shifts '${{ github.event.inputs.shifts }}' --notify "${{ github.event.inputs.notify }}"
+      - name: Process volunteer submission
+        env:
+          CLICKSEND_USERNAME: ${{ secrets.CLICKSEND_USERNAME }}
+          CLICKSEND_API_KEY: ${{ secrets.CLICKSEND_API_KEY }}
+        run: |
+          # Example command that receives volunteer input from event payload
+          # This should be adapted based on how the submission is passed in
+          python volunteer_schedule.py --name "$VOLUNTEER_NAME" --phone "$VOLUNTEER_PHONE" --shifts "$VOLUNTEER_SHIFTS"
 
-    - name: Generate calendar and JSON
-      run: |
-        python generate_calendar.py
+      - name: Generate calendar files
+        run: python generate_calendar.py
 
-    - name: Commit and push updated schedule and docs
-      run: |
-        git config --global user.name "github-actions"
-        git config --global user.email "github-actions@github.com"
-        git add volunteer_input.yaml docs/calendar.html docs/volunteer_schedule.json
-        git commit -m "Update schedule and calendar [skip ci]" || echo "No changes to commit"
-        git push
+      - name: Commit calendar changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add docs/calendar.html docs/volunteer_schedule.json volunteer_input.yaml
+          git commit -m "Update calendar and schedule data"
+          git push
