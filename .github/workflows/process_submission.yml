@@ -47,8 +47,7 @@ jobs:
         env:
           CLICKSEND_USERNAME: ${{ secrets.CLICKSEND_USERNAME }}
           CLICKSEND_API_KEY: ${{ secrets.CLICKSEND_API_KEY }}
-        run: |
-          python send_sms.py "${{ steps.parse.outputs.phone }}" "${{ steps.parse.outputs.name }}"
+        run: python send_sms.py "${{ steps.parse.outputs.phone }}" "${{ steps.parse.outputs.name }}"
 
       - name: Trigger Process All Volunteers workflow
         uses: peter-evans/repository-dispatch@v3
