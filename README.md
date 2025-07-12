@@ -91,14 +91,55 @@ https://your-username.github.io/volunteer-scheduler
 
 ---
 
-## 🛠️ Admin Dashboard
+# 🧑‍💼 Admin Dashboard
+This web-based dashboard lets administrators view and manage volunteer submissions stored in volunteer_input.yaml.
 
-The **Admin Dashboard** allows authorized users to manage volunteers, view submissions, and control scheduling through a web interface.
+## 🔧 Features
+View all volunteer names, phones, and shifts
 
-- Backend implementation: `admin_dashboard.py`  
-- Dockerfile available at `admin_dashboard/Dockerfile` for containerized deployment.  
-- Shares `volunteer_input.yaml` with workflows for up-to-date data.  
-- Can be run locally for testing or deployed on your server or cloud provider.
+Delete a volunteer submission with one click
+
+No login required (runs locally or inside Docker)
+
+Edits are written directly to the YAML file
+
+## 🖥️ Run Locally
+Make sure you have Python installed, then:
+
+```
+pip install flask pyyaml
+python admin_dashboard.py
+```
+
+The dashboard will be accessible at:
+
+```
+http://localhost:8080
+```
+
+## 🐳 Run via Docker (Optional)
+Build and run in an isolated container:
+
+```
+docker build -t volunteer-admin-dashboard -f admin_dashboard/Dockerfile .
+docker run -p 8080:8080 -v $(pwd)/volunteer_input.yaml:/app/volunteer_input.yaml volunteer-admin-dashboard
+```
+
+This mounts your live volunteer_input.yaml into the container for real-time management.
+
+## 🚫 Delete Volunteers
+Each volunteer has a Delete button that:
+
+Matches based on name + phone
+
+Removes the entry from volunteer_input.yaml
+
+Redirects back to the refreshed list
+
+## 🔒 Note
+No authentication is included — secure behind a firewall or VPN if deploying remotely
+
+All changes directly affect the live volunteer_input.yaml, which is also used by GitHub Actions
 
 
 ## 🚀 How to Use
