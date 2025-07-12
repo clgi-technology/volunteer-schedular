@@ -25,12 +25,7 @@ body:
     id: shifts
     attributes:
       label: Shift Availability
-      description: |
-        Enter your available shifts in JSON format. Example:
-        [
-          {"date":"2025-07-07","time":"18:00","role":"Usher"},
-          {"date":"2025-07-09","time":"09:00","role":"Greeter"}
-        ]
-      placeholder: Enter your shifts as JSON text here
+      description: Enter your available shifts in JSON format.
+      placeholder: '[{"date":"YYYY-MM-DD","time":"HH:MM","role":"Role"}]'
     validations:
       required: true
