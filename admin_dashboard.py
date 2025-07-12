@@ -1,9 +1,3 @@
-
----
-
-## 10. `admin_dashboard.py`
-
-```python
 import yaml
 import os
 from flask import Flask, render_template_string, request, redirect, url_for
@@ -12,18 +6,15 @@ app = Flask(__name__)
 
 SCHEDULE_FILE = 'volunteer_input.yaml'
 
-
 def load_schedule():
     if os.path.exists(SCHEDULE_FILE):
         with open(SCHEDULE_FILE, 'r') as f:
             return yaml.safe_load(f) or []
     return []
 
-
 def save_schedule(schedule):
     with open(SCHEDULE_FILE, 'w') as f:
         yaml.safe_dump(schedule, f)
-
 
 @app.route('/')
 def index():
@@ -66,7 +57,6 @@ def index():
     </html>
     ''', schedule=schedule)
 
-
 @app.route('/delete', methods=['POST'])
 def delete_volunteer():
     name = request.form.get('name')
@@ -77,7 +67,6 @@ def delete_volunteer():
     save_schedule(schedule)
 
     return redirect(url_for('index'))
-
 
 if __name__ == '__main__':
     app.run(debug=True, port=8080)
