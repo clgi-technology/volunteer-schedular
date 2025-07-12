@@ -3,7 +3,8 @@ import sys
 import json
 import yaml
 from datetime import datetime
-from clicksend_client import ClickSendClient
+from clicksend_client import Configuration, ApiClient
+from clicksend_client.apis import SmsApi
 from clicksend_client.models.sms_message import SmsMessage
 from clicksend_client.models.sms_message_collection import SmsMessageCollection
 import argparse
@@ -29,8 +30,12 @@ def send_sms(name, phone, shifts):
         print("Missing ClickSend credentials")
         return
 
-    client = ClickSendClient(username=username, api_key=api_key)
-    sms_api = client.sms_api
+    configuration = Configuration()
+    configuration.username = username
+    configuration.password = api_key
+
+    api_client = ApiClient(configuration)
+    sms_api = SmsApi(api_client)
 
     messages = []
     for shift in shifts:
@@ -47,7 +52,7 @@ def send_sms(name, phone, shifts):
                 source="python",
                 body=text,
                 to=phone,
-                from_="Volunteers"  # Adjust sender ID if allowed
+                from_="Volunteers"
             )
         )
 
@@ -65,7 +70,7 @@ def generate_ics(name, shifts):
         dt = datetime.strptime(f"{shift['date']} {shift['time']}", '%Y-%m-%d %H:%M')
         event.name = f"{shift['role']} shift"
         event.begin = dt
-        event.duration = {"hours": 1}  # Assume 1 hour shifts; adjust as needed
+        event.duration = {"hours": 1}
         event.description = f"Volunteer: {name}"
         cal.events.add(event)
     ics_path = f"{name.replace(' ', '_')}_shifts.ics"
