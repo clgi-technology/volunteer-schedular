@@ -3,10 +3,8 @@ import sys
 import json
 import yaml
 from datetime import datetime
-from clicksend_client import Configuration, ApiClient
-from clicksend_client.apis import SmsApi
-from clicksend_client.models.sms_message import SmsMessage
-from clicksend_client.models.sms_message_collection import SmsMessageCollection
+from clicksend_client import SMSApi, SmsMessage, SmsMessageCollection, Configuration, ApiClient
+from clicksend_client.rest import ApiException
 import argparse
 from ics import Calendar, Event
 
@@ -34,8 +32,7 @@ def send_sms(name, phone, shifts):
     configuration.username = username
     configuration.password = api_key
 
-    api_client = ApiClient(configuration)
-    sms_api = SmsApi(api_client)
+    sms_api = SMSApi(ApiClient(configuration))
 
     messages = []
     for shift in shifts:
@@ -60,8 +57,10 @@ def send_sms(name, phone, shifts):
     try:
         response = sms_api.sms_send_post(sms_collection)
         print(f"SMS sent successfully: {response}")
+    except ApiException as e:
+        print(f"ClickSend API error: {e}")
     except Exception as e:
-        print(f"Error sending SMS: {e}")
+        print(f"Unexpected error while sending SMS: {e}")
 
 def generate_ics(name, shifts):
     cal = Calendar()
@@ -81,7 +80,7 @@ def generate_ics(name, shifts):
 def main():
     parser = argparse.ArgumentParser(description='Process volunteer shifts and send SMS.')
     parser.add_argument('--name', required=True, help='Volunteer full name')
-    parser.add_argument('--phone', required=True, help='Volunteer phone number')
+    parser.add_argument('--phone', help='Volunteer phone number (optional, required if SMS reminder is enabled)')
     parser.add_argument('--shifts', required=True, help='JSON string of shifts')
     parser.add_argument('--notify_sms', action='store_true', help='Send SMS notification if set')
 
@@ -99,12 +98,16 @@ def main():
     schedule.append({
         'name': name,
         'phone': phone,
-        'shifts': shifts
+        'shifts': shifts,
+        'notify_sms': args.notify_sms
     })
     save_schedule(schedule)
 
     if args.notify_sms:
-        send_sms(name, phone, shifts)
+        if phone:
+            send_sms(name, phone, shifts)
+        else:
+            print("SMS notification requested but no phone number provided.")
 
     generate_ics(name, shifts)
 
