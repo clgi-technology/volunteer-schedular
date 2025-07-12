@@ -24,19 +24,21 @@ This project enables volunteers to submit their availability for multiple roles,
 │   └── workflows/
 │       └── process_submission.yml
 ├── docs/
-│   ├── calendar.html                  # generated
-│   └── volunteer_schedule.json       # generated
+│   ├── calendar.html
+│   └── volunteer_schedule.json
 ├── form/
 │   └── index.html
-├── templates/
-│   └── calendar_template.html        # optional (if you decouple template)
+├── templates/                     # optional but useful for Flask templates
+│   └── calendar_template.html
+├── admin_dashboard.py
 ├── volunteer_input.yaml
 ├── volunteer_schedule.py
 ├── generate_calendar.py
 ├── requirements.txt
-├── requirements-dev.txt             # optional
-├── .env                             # optional for local
+├── requirements-dev.txt           # optional
+├── .env                          # optional for local environment variables
 └── README.md
+
 
 
 
