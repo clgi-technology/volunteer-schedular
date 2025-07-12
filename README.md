@@ -1,4 +1,4 @@
-# 🙌 Volunteer Scheduler (Fully Scripted Version)
+# 🙌 Volunteer Scheduler
 
 This project enables volunteers to submit their availability for multiple roles, dates, and times using a static HTML form hosted on GitHub Pages. Submissions are processed automatically via GitHub Actions, stored in a YAML file, and rendered in an interactive calendar.
 
