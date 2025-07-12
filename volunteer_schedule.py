@@ -49,7 +49,7 @@ def send_sms(name, phone, shifts):
                 source="python",
                 body=text,
                 to=phone,
-                from_="Volunteers"
+                _from="Volunteers"  # Corrected parameter name
             )
         )
 
