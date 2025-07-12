@@ -26,22 +26,35 @@ jobs:
       - name: Extract volunteer name and shifts from issue body
         id: extract
         run: |
-          # Debug: print event path and issue body JSON
-          echo "GITHUB_EVENT_PATH: $GITHUB_EVENT_PATH"
+          # Debug: print event JSON path and issue body
+          echo "Event JSON path: $GITHUB_EVENT_PATH"
           cat "$GITHUB_EVENT_PATH"
 
-          # Extract issue body text
+          # Extract issue body JSON
           ISSUE_BODY=$(jq -r .issue.body "$GITHUB_EVENT_PATH")
 
-          # Extract volunteer name after "### Full Name" heading
-          NAME=$(echo "$ISSUE_BODY" | sed -n '/### Full Name/{n;p;}' | xargs)
+          echo "---- Lines around 'Full Name' heading ----"
+          echo "$ISSUE_BODY" | grep -A3 -B3 "Full Name" || echo "No 'Full Name' heading found"
 
-          # Extract shifts block after "### What shifts are you available for?"
-          SHIFTS=$(echo "$ISSUE_BODY" | awk '/### What shifts are you available for\?/{flag=1; next} /^### /{flag=0} flag' | sed '/^\s*$/d' | tr '\n' ' ' | xargs)
+          # Extract volunteer name after "Full Name" heading (more robust)
+          NAME=$(echo "$ISSUE_BODY" | awk '
+            BEGIN {found=0}
+            /Full Name/ {found=1; next}
+            found && /^[[:space:]]*$/ {next}
+            found {print; exit}
+          ' | xargs)
 
-          echo "Extracted name: '$NAME'"
-          echo "Extracted shifts: '$SHIFTS'"
+          # Extract shifts after "What shifts are you available for?" heading
+          SHIFTS=$(echo "$ISSUE_BODY" | awk '
+            /What shifts are you available for\?/ {flag=1; next}
+            /^### / {flag=0}
+            flag
+          ' | sed '/^\s*$/d' | tr '\n' ' ' | xargs)
 
+          echo "Extracted Name: '$NAME'"
+          echo "Extracted Shifts: '$SHIFTS'"
+
+          # Output variables for next steps
           echo "name=$NAME" >> $GITHUB_OUTPUT
           echo "shifts=$SHIFTS" >> $GITHUB_OUTPUT
 
@@ -49,5 +62,4 @@ jobs:
         run: |
           echo "Name: '${{ steps.extract.outputs.name }}'"
           echo "Shifts: '${{ steps.extract.outputs.shifts }}'"
-
           python parse_issue.py --name "${{ steps.extract.outputs.name }}" --shifts "${{ steps.extract.outputs.shifts }}"
