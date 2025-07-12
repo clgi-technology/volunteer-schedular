@@ -100,35 +100,60 @@ The **Admin Dashboard** allows authorized users to manage volunteers, view submi
 - Shares `volunteer_input.yaml` with workflows for up-to-date data.  
 - Can be run locally for testing or deployed on your server or cloud provider.
 
-### Running Locally
 
-1. Create a `.env` file or set environment variables for any needed config (e.g., SMTP, GitHub tokens).  
-2. Install dependencies:  
-   ```bash
-   pip install -r requirements.txt
+## 🚀 How to Use
 
-3. Run the dashboard:
+### For Volunteers (Users)
 
-```
+1. **Access the Volunteer Form**  
+   Open the volunteer submission form hosted on GitHub Pages:  
+https://your-username.github.io/volunteer-scheduler/form/index.html
+
+2. **Submit Your Availability**  
+Fill in your full name, phone number, and select your available shifts (dates, times, roles).  
+3. **Submit the Form**  
+When submitted, your availability triggers a GitHub Actions workflow to process your data.  
+4. **Confirmation**  
+You may receive an email confirmation if SMTP is configured. Otherwise, check the public calendar once it updates.
+
+---
+
+### For Admins (Dashboard Users)
+
+1. **Run the Admin Dashboard**  
+You can run it locally or deploy it:  
+
+**Locally:**  
+```bash
+pip install -r requirements.txt
 python admin_dashboard.py
 ```
-4. Access the dashboard in your browser at http://localhost:5000 (default Flask port).
 
-### Running via Docker
-1. Build the image:
+Open your browser at http://localhost:5000
+
+Using Docker:
 
 ```
 docker build -t volunteer-admin-dashboard ./admin_dashboard
-```
-
-2. Run the container (mapping ports and mounting volumes as needed):
-
-
-```
 docker run -p 5000:5000 -v $(pwd)/volunteer_input.yaml:/app/volunteer_input.yaml volunteer-admin-dashboard
 ```
 
-3. Open your browser at http://localhost:5000.
+2. **Manage Volunteers**
+
+Use the web interface to:
+
+View all volunteer submissions
+
+Edit or delete volunteer data
+
+Trigger scheduling or notification actions manually (if supported)
+
+3. **Sync with GitHub Actions**
+The dashboard uses the same volunteer_input.yaml file as GitHub Actions workflows, ensuring consistent data.
+
+4. **Deploy for Team Access**
+Deploy the dashboard to a server or cloud platform for multi-admin access (optional).
+---
 
 ## 🧪 Local Testing
 
