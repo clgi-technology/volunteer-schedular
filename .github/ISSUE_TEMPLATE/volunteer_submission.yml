@@ -17,7 +17,7 @@ body:
     attributes:
       label: Phone Number
       description: Enter your phone number including country code
-      placeholder: +1234567890
+      placeholder: "+1234567890"
     validations:
       required: true
 
