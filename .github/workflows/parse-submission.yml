@@ -30,8 +30,14 @@ jobs:
           echo "$ISSUE_BODY"
           echo "-----"
 
-          # Improved name extraction: get line after "### Full Name" only if not another heading
-          NAME=$(echo "$ISSUE_BODY" | awk '/### Full Name/{getline; if($0 ~ /^### /) print ""; else print $0}' | xargs)
+          # Extract first non-empty line after ### Full Name
+          NAME=$(echo "$ISSUE_BODY" | awk '
+            BEGIN {found=0}
+            /^### Full Name/ {found=1; next}
+            found && NF {print; exit}
+          ')
+          NAME=$(echo "$NAME" | xargs)
+
           PHONE=$(echo "$ISSUE_BODY" | sed -n '/### Phone Number/{n;p;}' | xargs)
 
           SHIFTS=$(echo "$ISSUE_BODY" | awk '/### What shifts are you available for\?/{flag=1; next} /^### /{flag=0} flag')
