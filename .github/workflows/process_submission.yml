@@ -3,11 +3,17 @@ name: Process Submission
 on:
   workflow_dispatch:
   repository_dispatch:
-  # Could be triggered by form submission webhook or API call
 
 jobs:
   process:
     runs-on: ubuntu-latest
+    env:
+      VOLUNTEER_NAME: "John Doe"
+      VOLUNTEER_PHONE: "+1234567890"
+      VOLUNTEER_SHIFTS: '[{"date": "2025-07-07", "time": "18:00", "role": "Usher"}, {"date": "2025-07-09", "time": "09:00", "role": "Greeter"}]'
+      CLICKSEND_USERNAME: ${{ secrets.CLICKSEND_USERNAME }}
+      CLICKSEND_API_KEY: ${{ secrets.CLICKSEND_API_KEY }}
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -23,13 +29,12 @@ jobs:
           pip install -r requirements.txt
 
       - name: Process volunteer submission
-        env:
-          CLICKSEND_USERNAME: ${{ secrets.CLICKSEND_USERNAME }}
-          CLICKSEND_API_KEY: ${{ secrets.CLICKSEND_API_KEY }}
         run: |
-          # Example command that receives volunteer input from event payload
-          # This should be adapted based on how the submission is passed in
-          python volunteer_schedule.py --name "$VOLUNTEER_NAME" --phone "$VOLUNTEER_PHONE" --shifts "$VOLUNTEER_SHIFTS"
+          python volunteer_schedule.py \
+            --name "$VOLUNTEER_NAME" \
+            --phone "$VOLUNTEER_PHONE" \
+            --shifts "$VOLUNTEER_SHIFTS" \
+            --notify_sms
 
       - name: Generate calendar files
         run: python generate_calendar.py
