@@ -1,7 +1,4 @@
-# parse_issue.py
-
 import yaml
-import json
 import os
 import sys
 
@@ -28,19 +25,14 @@ try:
         print("❌ Missing field: What shifts are you available for?")
         sys.exit(1)
     shifts_text = body.split("**What shifts are you available for?**:")[1].strip()
-    # Parse shifts line by line
     shifts = []
     for line in shifts_text.splitlines():
         line = line.strip()
         if not line:
             continue
-        # Example line: Monday July 22, 2025, 6:00 PM – Usher
-        # Split by '–' (en dash or hyphen)
         if '–' in line:
             date_time_part, role = line.split('–', 1)
-            date_time_part = date_time_part.strip()
-            role = role.strip()
-            shifts.append({"datetime": date_time_part, "role": role})
+            shifts.append({"datetime": date_time_part.strip(), "role": role.strip()})
         else:
             print(f"❌ Invalid shift format: {line}")
             sys.exit(1)
@@ -60,3 +52,7 @@ with open("volunteer_input.yaml", "w") as f:
     yaml.dump(data, f, sort_keys=False)
 
 print(f"✅ Added {name} with {len(shifts)} shift(s). Phone: {'provided' if phone else 'not provided'}")
+
+# Print GitHub Actions step outputs
+print(f"::set-output name=name::{name}")
+print(f"::set-output name=phone::{phone}")
