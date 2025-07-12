@@ -1,6 +1,6 @@
 name: Volunteer Submission
 description: Submit your availability for volunteering
-title: "[Volunteer] <Your Name>"
+title: "[Volunteer Sign Up] <Event Name>"
 labels: [volunteer-submission]
 body:
   - type: input
@@ -16,7 +16,7 @@ body:
     id: phone
     attributes:
       label: Phone Number
-      description: Enter your phone number including country code
+      description: Enter your phone number including country code to receive SMS notification reminder beforehand
       placeholder: "+1234567890"
     validations:
       required: true
