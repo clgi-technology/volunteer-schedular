@@ -18,10 +18,9 @@ jobs:
           python-version: 3.11
 
       - name: Install dependencies
-        run: |
-          pip install clicksend-client ics pyyaml
+        run: pip install clicksend-client ics pyyaml
 
-      - name: Extract volunteer name and shifts from issue body
+      - name: Extract volunteer name, phone, and shifts
         id: extract
         run: |
           ISSUE_BODY=$(jq -r .issue.body "$GITHUB_EVENT_PATH")
@@ -30,31 +29,25 @@ jobs:
           echo "$ISSUE_BODY"
           echo "-----"
 
-          NAME=$(echo "$ISSUE_BODY" | sed -n '/### Full Name/{n;p;}' | xargs)
-          PHONE=$(echo "$ISSUE_BODY" | sed -n '/### Phone Number/{n;p;}' | xargs)
-
-          SHIFTS=$(echo "$ISSUE_BODY" | awk '/### What shifts are you available for\?/{flag=1; next} /^### /{flag=0} flag')
-          CLEANED_SHIFTS=$(echo "$SHIFTS" | sed '/^\s*$/d' | xargs -d '\n' -n1 echo)
+          NAME=$(echo "$ISSUE_BODY" | sed -n '/👤 Name:/ {n;p;}' | xargs)
+          PHONE=$(echo "$ISSUE_BODY" | sed -n '/📱 Phone:/ {n;p;}' | xargs)
+          SHIFTS=$(echo "$ISSUE_BODY" | awk '/📆 Shifts:/ {flag=1; next} /^$/ {flag=0} flag' | xargs)
 
           echo "👤 Name: $NAME"
           echo "📱 Phone: $PHONE"
-          echo "📆 Shifts:"
-          echo "$CLEANED_SHIFTS"
+          echo "📆 Shifts: $SHIFTS"
 
-          if [ -z "$NAME" ] || [ -z "$CLEANED_SHIFTS" ]; then
+          if [ -z "$NAME" ] || [ -z "$SHIFTS" ]; then
             echo "❌ Error: Missing required 'name' or 'shifts'"
             exit 1
           fi
 
           echo "name=$NAME" >> $GITHUB_OUTPUT
           echo "phone=$PHONE" >> $GITHUB_OUTPUT
-          echo "shifts<<EOF" >> $GITHUB_OUTPUT
-          echo "$CLEANED_SHIFTS" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "shifts=$SHIFTS" >> $GITHUB_OUTPUT
 
-      - name: Run parse_issue.py script
+      - name: Run parse_issue.py
         run: |
-          echo "✅ Running submission parser..."
           python parse_issue.py \
             --name "${{ steps.extract.outputs.name }}" \
             --phone "${{ steps.extract.outputs.phone }}" \
