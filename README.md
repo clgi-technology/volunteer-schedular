@@ -1,31 +1,30 @@
-# 🙌 Volunteer Scheduler (Fully Scripted Version)
+🙌 Volunteer Scheduler (Fully Scripted Version)
+This project enables volunteers to submit their availability for multiple roles, dates, and times using a static HTML form hosted on GitHub Pages. Submissions are processed automatically via GitHub Actions, stored in a YAML file, and rendered in an interactive calendar.
 
-This project enables volunteers to submit their availability for multiple roles, dates, and times using a **static HTML form** hosted on GitHub Pages. Submissions are processed via **GitHub Actions**, stored in a YAML file, and rendered in an interactive calendar.
+✨ Features
+📋 Accepts structured input for multiple shifts per volunteer
 
----
+🔁 Fully automated processing with GitHub Actions workflows
 
-## ✨ Features
+📅 Builds a filterable, interactive calendar from schedule data
 
-- 📋 Accepts structured input for multiple shifts per volunteer
-- 🔁 Fully automated using GitHub Actions
-- 📅 Builds a filterable, interactive calendar from schedule data
-- 🌐 Publishes calendar and JSON data to GitHub Pages
-- 📧 Optional email notifications via SMTP
-- 🔐 Credentials managed securely with GitHub Secrets
+🌐 Publishes calendar HTML and JSON data to GitHub Pages (docs/)
 
----
+📧 Optional email notifications via SMTP using GitHub Secrets
 
-## 📁 Project Structure
+🔐 Credentials managed securely with GitHub Secrets
 
-```
-
+📁 Project Structure
+pgsql
+Copy
+Edit
 .
 ├── .github/
 │   ├── workflows/
-│       ├── deploy-dashboard.yml
-│       ├── process-all-volunteers.yml
-│       ├── process_submission.yml
-│       └── quality-gate.yml
+│   │   ├── deploy-dashboard.yml
+│   │   ├── process-all-volunteers.yml
+│   │   ├── process_submission.yml
+│   │   └── quality-gate.yml
 │   └── ISSUE_TEMPLATE/
 │       └── volunteer_submission.yml
 ├── admin_dashboard/
@@ -36,91 +35,84 @@ This project enables volunteers to submit their availability for multiple roles,
 │   └── volunteer_schedule.json
 ├── form/
 │   └── index.html
-├── templates/                     # optional but useful for Flask templates
+├── templates/                     
 │   └── calendar_template.html
 ├── admin_dashboard.py
 ├── volunteer_input.yaml
 ├── volunteer_schedule.py
 ├── generate_calendar.py
 ├── requirements.txt
-├── requirements-dev.txt           # optional
-├── .env                          # optional for local environment variables
+├── requirements-dev.txt           
+├── .env                          
 └── README.md
+🧠 How It Works
+Volunteer fills out the static HTML form (form/index.html).
 
+JavaScript sends a POST request to GitHub API to trigger the process_submission.yml workflow.
 
+GitHub Actions workflows:
 
+Append volunteer submission to volunteer_input.yaml
 
-```
----
+Send optional email reminders (if configured)
 
-## 🧠 How It Works
+Generate interactive calendar HTML + JSON (docs/)
 
-1. Volunteer fills out the static HTML form.
-2. JavaScript sends a POST request to GitHub API to trigger a workflow.
-3. GitHub Action:
-   - Appends shifts to `volunteer_input.yaml`
-   - Sends optional email reminders
-   - Generates interactive calendar HTML + JSON
-   - Publishes calendar files to GitHub Pages
+Publish calendar files to GitHub Pages via deploy-dashboard.yml
 
----
+🛠️ Setup Instructions
+1. Create GitHub Repository
+Create a new public or private repository named volunteer-scheduler.
 
-## 🛠️ Setup Instructions
+2. Add GitHub Secrets
+Go to Settings > Secrets and variables > Actions > New repository secret and add:
 
-### 1. Create GitHub Repository
+Secret Name	Description
+EMAIL_SENDER	Your SMTP email address
+EMAIL_PASSWORD	Your SMTP email password or app key
+GH_PAT	GitHub Personal Access Token
 
-Create a new public or private repository named `volunteer-scheduler`.
+3. Enable GitHub Pages
+Go to Settings > Pages and set the source to the docs/ folder.
+Your site will be available at:
 
-### 2. Add GitHub Secrets
+arduino
+Copy
+Edit
+https://your-username.github.io/volunteer-scheduler
+🌐 Static HTML Form
+Location: form/index.html
 
-Go to **Repo → Settings → Secrets → Actions → New repository secret**, and add:
+Collects: name, phone number, and multiple shift availabilities
 
-| Secret Name       | Description                        |
-|-------------------|------------------------------------|
-| EMAIL_SENDER      | Your SMTP email address            |
-| EMAIL_PASSWORD    | Your SMTP email password or app key|
-| GH_PAT            | GitHub Personal Access Token       |
+Sends data to GitHub API via JavaScript fetch() call to trigger workflows
 
-### 3. Enable GitHub Pages
-
-- Go to: **Repo Settings → Pages**
-- Source: `docs/` folder
-- URL: `https://your-username.github.io/volunteer-scheduler`
-
----
-
-## 🌐 Static HTML Form
-
-- Located at `form/index.html`
-- Collects name, phone, and shifts
-- Sends data to GitHub API using `fetch()`
-
----
-
-## 🧪 Local Testing
-
-```
+🧪 Local Testing
 bash
+Copy
+Edit
 # Set environment variables for testing
 export EMAIL_SENDER="your_email@example.com"
 export EMAIL_PASSWORD="your_email_password"
 
-# Run scripts manually
+# Run volunteer scheduling script manually
 python volunteer_schedule.py --name "Alice" --phone "+1234567890" --shifts '[{"date": "2025-07-15", "time": "10:00", "role": "Greeter"}]'
+
+# Generate calendar HTML and JSON files
 python generate_calendar.py
+🛠️ Optional Enhancements
+Send calendar invites (ICS) via email
 
-```
-⸻
-## 🛠️ Optional Enhancements
-• Send calendar invites (ICS) via email
-• Web dashboard to manage volunteers directly
-• Export or sync calendar to Google Calendar or Outlook
-⸻
-## 📘 License
-MIT License
-⸻
-## 🙏 Acknowledgments
-• GitHub Actions
-• GitHub Pages
-• All our amazing volunteers
+Web dashboard to manage volunteers directly
 
+Export or sync calendar to Google Calendar or Outlook
+
+📘 License
+This project is licensed under the MIT License.
+
+🙏 Acknowledgments
+GitHub Actions
+
+GitHub Pages
+
+All our amazing volunteers
