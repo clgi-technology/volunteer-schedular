@@ -2,7 +2,7 @@ import os
 import sys
 import json
 import yaml
-from datetime import datetime
+from datetime import datetime, date
 from clicksend_client import SMSApi, SmsMessage, SmsMessageCollection, Configuration, ApiClient
 from clicksend_client.rest import ApiException
 import argparse
@@ -17,8 +17,20 @@ def load_schedule():
     return []
 
 def save_schedule(schedule):
+    # Convert any date objects to strings before saving
+    def convert_dates(obj):
+        if isinstance(obj, list):
+            return [convert_dates(item) for item in obj]
+        elif isinstance(obj, dict):
+            return {key: convert_dates(value) for key, value in obj.items()}
+        elif isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        else:
+            return obj
+
+    schedule_serializable = convert_dates(schedule)
     with open(SCHEDULE_FILE, 'w') as f:
-        yaml.safe_dump(schedule, f)
+        yaml.safe_dump(schedule_serializable, f)
 
 def send_sms(name, phone, shifts):
     username = os.getenv('CLICKSEND_USERNAME')
@@ -49,7 +61,7 @@ def send_sms(name, phone, shifts):
                 source="python",
                 body=text,
                 to=phone,
-                _from="Volunteers"  # Corrected parameter name
+                _from="Volunteers"
             )
         )
 
