@@ -76,7 +76,7 @@
 </table>
 
 <div class="back-link">
-  <a id="back-link">← Back to Sign-Up Page</a>
+  <a href="index.html">← Back to Sign-Up Page</a>
 </div>
 
 <script>
@@ -120,12 +120,6 @@ function filterCalendar() {
 
   renderCalendar(filtered);
 }
-
-// Dynamically generate link back to the index page
-(function() {
-  const basePath = location.pathname.split('/').slice(0, -1).join('/');
-  document.getElementById('back-link').href = location.origin + basePath + '/index.html';
-})();
 </script>
 
 </body>
