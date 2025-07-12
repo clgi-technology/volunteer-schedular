@@ -1,11 +1,11 @@
-name: Process Volunteer Submission
+name: Parse Volunteer Submission
 
 on:
   issues:
     types: [opened]
 
 jobs:
-  process-submission:
+  parse-submission:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,41 +19,43 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install clicksend-client
-          pip install ics
-          pip install pyyaml
+          pip install clicksend-client ics pyyaml
 
       - name: Extract volunteer name and shifts from issue body
         id: extract
         run: |
-          # For debugging: show the event file contents
-          echo "GITHUB_EVENT_PATH contents:"
-          cat "$GITHUB_EVENT_PATH"
-
-          # Extract the full issue body
           ISSUE_BODY=$(jq -r .issue.body "$GITHUB_EVENT_PATH")
 
-          # Extract name under "### Full Name" heading (trim whitespace)
-          NAME=$(echo "$ISSUE_BODY" | awk '
-            BEGIN {found=0}
-            /### Full Name/ {found=1; next}
-            found && /^[[:space:]]*$/ {next}
-            found {print; exit}
-          ' | xargs)
+          echo "📄 Raw issue body:"
+          echo "$ISSUE_BODY"
+          echo "-----"
 
-          # Extract shifts under "### What shifts are you available for?" heading until next heading
-          SHIFTS=$(echo "$ISSUE_BODY" | awk '
-            /### What shifts are you available for\?/ {flag=1; next}
-            /^### / {flag=0}
-            flag
-          ' | sed '/^\s*$/d' | tr '\n' ' ' | xargs)
+          NAME=$(echo "$ISSUE_BODY" | sed -n '/### Full Name/{n;p;}' | xargs)
+          PHONE=$(echo "$ISSUE_BODY" | sed -n '/### Phone Number/{n;p;}' | xargs)
+
+          SHIFTS=$(echo "$ISSUE_BODY" | awk '/### What shifts are you available for\?/{flag=1; next} /^### /{flag=0} flag')
+          CLEANED_SHIFTS=$(echo "$SHIFTS" | sed '/^\s*$/d' | xargs -d '\n' -n1 echo)
+
+          echo "👤 Name: $NAME"
+          echo "📱 Phone: $PHONE"
+          echo "📆 Shifts:"
+          echo "$CLEANED_SHIFTS"
+
+          if [ -z "$NAME" ] || [ -z "$CLEANED_SHIFTS" ]; then
+            echo "❌ Error: Missing required 'name' or 'shifts'"
+            exit 1
+          fi
 
           echo "name=$NAME" >> $GITHUB_OUTPUT
-          echo "shifts=$SHIFTS" >> $GITHUB_OUTPUT
+          echo "phone=$PHONE" >> $GITHUB_OUTPUT
+          echo "shifts<<EOF" >> $GITHUB_OUTPUT
+          echo "$CLEANED_SHIFTS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Run parse_issue.py script
         run: |
-          echo "Name: '${{ steps.extract.outputs.name }}'"
-          echo "Shifts: '${{ steps.extract.outputs.shifts }}'"
-
-          python parse_issue.py --name "${{ steps.extract.outputs.name }}" --shifts "${{ steps.extract.outputs.shifts }}"
+          echo "✅ Running submission parser..."
+          python parse_issue.py \
+            --name "${{ steps.extract.outputs.name }}" \
+            --phone "${{ steps.extract.outputs.phone }}" \
+            --shifts "${{ steps.extract.outputs.shifts }}"
