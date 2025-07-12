@@ -19,7 +19,21 @@ This project enables volunteers to submit their availability for multiple roles,
 
 ```
 
-. ├── .github/ │   └── workflows/ │       └── process_submission.yml       # GitHub Action workflow ├── docs/ │   ├── calendar.html                    # Auto-generated interactive calendar │   └── volunteer_schedule.json          # JSON data for calendar filtering ├── form/ │   └── index.html                       # Static HTML form for volunteer input ├── volunteer_schedule.py               # Processes inputs + sends email ├── generate_calendar.py                # Builds calendar.html + JSON from YAML ├── volunteer_input.yaml                # Full volunteer schedule (append-only) ├── requirements.txt                    # Python dependencies └── README.md
+.
+├── .github/
+│   └── workflows/
+│       └── process_submission.yml            # GitHub Action workflow
+├── docs/
+│   ├── calendar.html                         # Auto-generated interactive calendar
+│   └── volunteer_schedule.json               # JSON data for calendar filtering
+├── form/
+│   └── index.html                            # Static HTML form for volunteer input
+├── volunteer_schedule.py                    # Processes inputs + sends email
+├── generate_calendar.py                     # Builds calendar.html + JSON from YAML
+├── volunteer_input.yaml                     # Full volunteer schedule (append-only)
+├── requirements.txt                         # Python dependencies
+└── README.md
+
 
 ```
 ---
