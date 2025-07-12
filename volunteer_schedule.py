@@ -17,7 +17,6 @@ def load_schedule():
     return []
 
 def save_schedule(schedule):
-    # Convert any date objects to strings before saving
     def convert_dates(obj):
         if isinstance(obj, list):
             return [convert_dates(item) for item in obj]
@@ -45,7 +44,6 @@ def export_to_json(schedule):
                 'role': shift.get('role')
             })
 
-    # Write to docs/volunteer_schedule.json
     os.makedirs('docs', exist_ok=True)
     with open('docs/volunteer_schedule.json', 'w') as f:
         json.dump(flat_list, f, indent=2)
@@ -136,7 +134,6 @@ def main():
     })
     save_schedule(schedule)
 
-    # Export updated flat schedule to JSON for the calendar
     export_to_json(schedule)
 
     if args.notify_sms:
