@@ -159,6 +159,8 @@ Fill in your full name, phone number, and select your available shifts (dates, t
 When submitted, your availability triggers a GitHub Actions workflow to process your data.  
 4. **Confirmation**  
 You may receive an email confirmation if SMTP is configured. Otherwise, check the public calendar once it updates.
+Calendar located at https://<your-github-username>.github.io/<your-repo-name>/calendar.html
+
 
 ---
 
