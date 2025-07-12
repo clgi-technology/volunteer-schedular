@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -27,35 +27,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyyaml
-
-      - name: Write Python script to parse issue
-        run: |
-          echo "import yaml" > parse_issue.py
-          echo "import json" >> parse_issue.py
-          echo "import os" >> parse_issue.py
-          echo "" >> parse_issue.py
-          echo "body = os.environ['ISSUE_BODY']" >> parse_issue.py
-          echo "" >> parse_issue.py
-          echo "def extract_field(label):" >> parse_issue.py
-          echo "    start = body.find(f'**{label}**:') + len(f'**{label}**:')" >> parse_issue.py
-          echo "    end = body.find('\\n', start)" >> parse_issue.py
-          echo "    return body[start:end].strip()" >> parse_issue.py
-          echo "" >> parse_issue.py
-          echo "name = extract_field('Full Name')" >> parse_issue.py
-          echo "phone = extract_field('Phone Number')" >> parse_issue.py
-          echo "shifts_json = body.split('**Shift Availability**:')[1].strip()" >> parse_issue.py
-          echo "shifts = json.loads(shifts_json)" >> parse_issue.py
-          echo "" >> parse_issue.py
-          echo "try:" >> parse_issue.py
-          echo "    with open('volunteer_input.yaml') as f:" >> parse_issue.py
-          echo "        data = yaml.safe_load(f) or []" >> parse_issue.py
-          echo "except FileNotFoundError:" >> parse_issue.py
-          echo "    data = []" >> parse_issue.py
-          echo "" >> parse_issue.py
-          echo "data.append({'name': name, 'phone': phone, 'shifts': shifts})" >> parse_issue.py
-          echo "" >> parse_issue.py
-          echo "with open('volunteer_input.yaml', 'w') as f:" >> parse_issue.py
-          echo "    yaml.dump(data, f, sort_keys=False)" >> parse_issue.py
 
       - name: Run parser
         env:
