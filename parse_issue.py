@@ -2,12 +2,11 @@ import os
 import sys
 import json
 import yaml
-from datetime import datetime, date
+from datetime import datetime
 from clicksend_client import SMSApi, SmsMessage, SmsMessageCollection, Configuration, ApiClient
 from clicksend_client.rest import ApiException
 import argparse
 from ics import Calendar, Event
-import re
 
 SCHEDULE_FILE = 'volunteer_input.yaml'
 
@@ -18,20 +17,8 @@ def load_schedule():
     return []
 
 def save_schedule(schedule):
-    # Convert any date objects to strings before saving
-    def convert_dates(obj):
-        if isinstance(obj, list):
-            return [convert_dates(item) for item in obj]
-        elif isinstance(obj, dict):
-            return {key: convert_dates(value) for key, value in obj.items()}
-        elif isinstance(obj, (datetime, date)):
-            return obj.isoformat()
-        else:
-            return obj
-
-    schedule_serializable = convert_dates(schedule)
     with open(SCHEDULE_FILE, 'w') as f:
-        yaml.safe_dump(schedule_serializable, f)
+        yaml.safe_dump(schedule, f)
 
 def send_sms(name, phone, shifts):
     username = os.getenv('CLICKSEND_USERNAME')
@@ -90,71 +77,67 @@ def generate_ics(name, shifts):
         f.writelines(cal)
     print(f"ICS calendar invite saved to {ics_path}")
 
-def parse_shifts(text):
-    shifts = []
-    lines = text.splitlines()
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-
-        # Match format: "Friday July 25, 2025, 7:00 PM - Usher"
-        match = re.match(r"^(.*\d{4}, \d{1,2}:\d{2} (AM|PM))\s*-\s*(.+)$", line)
-        if match:
-            datetime_part = match.group(1).strip()
-            role = match.group(3).strip()
-        else:
-            # Fallback: no role provided
-            datetime_part = line
-            role = "Volunteer"
-
-        try:
-            dt = datetime.strptime(datetime_part, "%A %B %d, %Y, %I:%M %p")
-            shift = {
-                "date": dt.strftime("%Y-%m-%d"),
-                "time": dt.strftime("%H:%M"),
-                "role": role
-            }
-            shifts.append(shift)
-        except Exception as e:
-            print(f"⚠️ Failed to parse shift line: '{line}': {e}")
-    return shifts
+def parse_shift_line(line):
+    # Expected format: "Friday July 25, 2025, 7:00 PM - Usher"
+    try:
+        date_part, role = line.rsplit(' - ', 1)
+        # Remove weekday: split at first space and join back without weekday
+        parts = date_part.split(' ', 1)
+        date_time_str = parts[1] if len(parts) > 1 else parts[0]
+        dt = datetime.strptime(date_time_str.strip(), '%B %d, %Y, %I:%M %p')
+        return {
+            'date': dt.strftime('%Y-%m-%d'),
+            'time': dt.strftime('%H:%M'),
+            'role': role.strip()
+        }
+    except Exception as e:
+        print(f"⚠️ Failed to parse shift line: '{line}': {e}")
+        return None
 
 def main():
     parser = argparse.ArgumentParser(description='Process volunteer shifts and send SMS.')
     parser.add_argument('--name', required=True, help='Volunteer full name')
     parser.add_argument('--phone', help='Volunteer phone number (optional, required if SMS reminder is enabled)')
-    parser.add_argument('--shifts', required=True, help='Multi-line text of shifts')
+    parser.add_argument('--shifts', required=True, help='Multiline string of shifts')
     parser.add_argument('--notify_sms', action='store_true', help='Send SMS notification if set')
 
     args = parser.parse_args()
 
     name = args.name
     phone = args.phone
-    shifts_text = args.shifts
+    raw_shifts_str = args.shifts.strip()
+    lines = [line.strip() for line in raw_shifts_str.split('\n') if line.strip()]
 
-    shifts = parse_shifts(shifts_text)
+    parsed_shifts = []
+    for line in lines:
+        shift = parse_shift_line(line)
+        if shift:
+            parsed_shifts.append(shift)
 
-    if not shifts:
+    if not parsed_shifts:
         print("❌ No valid shifts parsed.")
         sys.exit(1)
 
     schedule = load_schedule()
+
+    # Append new entry
     schedule.append({
         'name': name,
         'phone': phone,
-        'shifts': shifts,
+        'shifts': parsed_shifts,
         'notify_sms': args.notify_sms
     })
+
     save_schedule(schedule)
+    print(f"✅ Added {len(parsed_shifts)} shifts for {name} to {SCHEDULE_FILE}")
 
     if args.notify_sms:
         if phone:
-            send_sms(name, phone, shifts)
+            send_sms(name, phone, parsed_shifts)
         else:
             print("SMS notification requested but no phone number provided.")
 
-    generate_ics(name, shifts)
+    generate_ics(name, parsed_shifts)
 
 if __name__ == '__main__':
     main()
