@@ -148,7 +148,7 @@ All changes directly affect the live volunteer_input.yaml, which is also used by
 
 1. **Access the Volunteer Form**  
    Open the volunteer submission form hosted on GitHub Pages:  
-https://your-username.github.io/volunteer-scheduler/form/index.html
+https://your-username.github.io/volunteer-schedular/
 
 2. **Submit Your Availability**  
 Fill in your full name, phone number, and select your available shifts (dates, times, roles).  
