@@ -1,0 +1,35 @@
+name: Parse Volunteer Submission
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  parse_submission:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Extract name and shifts from issue body
+        id: extract_fields
+        shell: bash
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          # Extract Full Name from Markdown section
+          NAME=$(echo "$ISSUE_BODY" | sed -n '/### Full Name/{n;p;}' | xargs)
+          
+          # Extract shifts lines after header until next ### or empty line
+          SHIFTS=$(echo "$ISSUE_BODY" | awk '/### What shifts are you available for?/{flag=1;next}/###/{flag=0}flag' | sed '/^\s*$/d' | paste -sd "\\n" -)
+
+          echo "Extracted NAME=$NAME"
+          echo -e "Extracted SHIFTS:\n$SHIFTS"
+
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+          echo "shifts=$SHIFTS" >> $GITHUB_OUTPUT
+
+      - name: Run parse_issue.py
+        run: |
+          python parse_issue.py --name "${{ steps.extract_fields.outputs.name }}" --shifts "${{ steps.extract_fields.outputs.shifts }}"
