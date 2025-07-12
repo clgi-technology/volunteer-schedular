@@ -8,7 +8,7 @@ body:
     attributes:
       label: Full Name
       description: Please enter your full name
-      placeholder: Jane Doe
+      placeholder: John Doe
     validations:
       required: true
 
@@ -16,30 +16,22 @@ body:
     id: phone
     attributes:
       label: Phone Number
-      description: Include area or country code (e.g. +1 or +44)
+      description: Enter your phone number including country code
       placeholder: +1234567890
     validations:
       required: true
 
   - type: textarea
-    id: availability
+    id: shifts
     attributes:
       label: What shifts are you available for?
       description: |
-        Tell us the days and times you can volunteer.
-        Include any preferred roles (e.g. Usher, Greeter, etc.)
+        Please describe each shift on a new line like this:
+
+        - Monday July 22, 6:00 PM – Usher
+        - Saturday July 27, 9:00 AM – Greeter
       placeholder: |
-        Example:
-        - Monday July 22, 6:00 PM — Usher
-        - Saturday July 27, 9:00 AM — Greeter
+        - Monday July 22, 6:00 PM – Usher
+        - Saturday July 27, 9:00 AM – Greeter
     validations:
       required: true
-
-  - type: textarea
-    id: notes
-    attributes:
-      label: Any other notes?
-      description: Optional: Tell us anything else we should know.
-      placeholder: (Optional) Allergies, special needs, or role preferences
-    validations:
-      required: false
