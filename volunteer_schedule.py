@@ -81,7 +81,7 @@ def main():
     parser = argparse.ArgumentParser(description='Process volunteer shifts and send SMS.')
     parser.add_argument('--name', required=True, help='Volunteer full name')
     parser.add_argument('--phone', help='Volunteer phone number (optional, required if SMS reminder is enabled)')
-    parser.add_argument('--shifts', required=True, help='JSON string of shifts')
+    parser.add_argument('--shifts', required=True, help='JSON string of shifts or a Python list')
     parser.add_argument('--notify_sms', action='store_true', help='Send SMS notification if set')
 
     args = parser.parse_args()
@@ -89,9 +89,12 @@ def main():
     name = args.name
     phone = args.phone
     try:
-        shifts = json.loads(args.shifts)
-    except json.JSONDecodeError:
-        print("Error parsing shifts JSON")
+        if isinstance(args.shifts, str):
+            shifts = json.loads(args.shifts)
+        else:
+            shifts = args.shifts
+    except Exception as e:
+        print(f"Error parsing shifts: {e}")
         sys.exit(1)
 
     schedule = load_schedule()
