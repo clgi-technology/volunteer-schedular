@@ -121,8 +121,11 @@ function filterCalendar() {
   renderCalendar(filtered);
 }
 
-// Dynamically link back to root GitHub Pages
-document.getElementById('back-link').href = location.origin + location.pathname.split('/').slice(0, -1).join('/') + '/';
+// Dynamically generate link back to the index page
+(function() {
+  const basePath = location.pathname.split('/').slice(0, -1).join('/');
+  document.getElementById('back-link').href = location.origin + basePath + '/index.html';
+})();
 </script>
 
 </body>
