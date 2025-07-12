@@ -21,16 +21,12 @@ body:
     validations:
       required: true
 
-  - type: textarea
+    - type: textarea
     id: shifts
     attributes:
       label: Shift Availability
-      description: |
-        Enter your available shifts in JSON format. Example:
-        [
-          {"date": "2025-07-07", "time": "18:00", "role": "Usher"},
-          {"date": "2025-07-09", "time": "09:00", "role": "Greeter"}
-        ]
+      description: Enter your available shifts in JSON format. Example: [{"date":"2025-07-07","time":"18:00","role":"Usher"}]
       placeholder: '[{"date":"YYYY-MM-DD","time":"HH:MM","role":"Role"}]'
     validations:
       required: true
+
