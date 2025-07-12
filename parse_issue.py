@@ -31,26 +31,21 @@ def save_schedule(schedule):
         yaml.safe_dump(schedule_serializable, f)
 
 def parse_shifts(shifts_str):
-    # The shifts string might be multiple shifts separated by some delimiter
-    # But currently expecting a single string with shifts separated by commas or newlines
-    # Let's try splitting by ' – ' (en dash surrounded by spaces), or '\n' and parse each line
-
     shift_lines = [line.strip() for line in shifts_str.split('\n') if line.strip()]
-    if len(shift_lines) == 1 and ' – ' not in shift_lines[0] and ' - ' not in shift_lines[0]:
-        # maybe shifts are space separated? fallback to splitting by commas
+
+    # If only one line, fallback to comma-based split
+    if len(shift_lines) == 1 and all(sep not in shift_lines[0] for sep in [' – ', ' - ', ' — ']):
         shift_lines = [line.strip() for line in shifts_str.split(',') if line.strip()]
 
     parsed_shifts = []
     for line in shift_lines:
-        # Support multiple dash types: hyphen, en dash, em dash
+        # Accept any dash format surrounded by spaces
         parts = re.split(r'\s+[-–—]\s+', line)
         if len(parts) != 2:
             print(f"⚠️ Failed to parse shift line: '{line}': expected exactly 2 parts split by dash")
             continue
-        date_time_str, role = parts
 
-        # Parse date and time from date_time_str
-        # The expected format is something like "Monday July 22, 2025, 6:00 PM"
+        date_time_str, role = parts
         try:
             dt = datetime.strptime(date_time_str.strip(), '%A %B %d, %Y, %I:%M %p')
         except ValueError as e:
@@ -94,7 +89,6 @@ def main():
     })
     save_schedule(schedule)
 
-    # Optional: generate ICS or send SMS (not included here for brevity)
     print(f"✅ Successfully processed submission for {name} with {len(shifts)} shifts.")
 
 if __name__ == '__main__':
