@@ -1,35 +1,41 @@
 name: Process Volunteer Submission
 
 on:
-  push:
-    paths:
-      - 'volunteer_input.yaml'
+  workflow_dispatch:
+  repository_dispatch:
+  # You can customize triggers as needed, e.g., on push or API call
 
 jobs:
-  process-submission:
+  process:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: 3.11
+        python-version: '3.10'
 
     - name: Install dependencies
-      run: pip install -r requirements.txt
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
 
     - name: Process volunteer schedule
-      run: python volunteer_schedule.py
-
-    - name: Generate calendar
-      run: python generate_calendar.py
-
-    - name: Commit and push calendar updates
+      env:
+        CLICKSEND_USERNAME: ${{ secrets.CLICKSEND_USERNAME }}
+        CLICKSEND_API_KEY: ${{ secrets.CLICKSEND_API_KEY }}
       run: |
-        git config user.name "github-actions"
-        git config user.email "github-actions@github.com"
-        git add docs/*
-        git commit -m "Update calendar"
+        python volunteer_schedule.py --name "${{ github.event.inputs.name }}" --phone "${{ github.event.inputs.phone }}" --shifts '${{ github.event.inputs.shifts }}' --notify "${{ github.event.inputs.notify }}"
+
+    - name: Generate calendar and JSON
+      run: |
+        python generate_calendar.py
+
+    - name: Commit and push updated schedule and docs
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+        git add volunteer_input.yaml docs/calendar.html docs/volunteer_schedule.json
+        git commit -m "Update schedule and calendar [skip ci]" || echo "No changes to commit"
         git push
