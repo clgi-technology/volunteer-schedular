@@ -1,0 +1,60 @@
+name: Process All Volunteers
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyyaml
+
+      - name: Process all volunteers from YAML
+        run: |
+          python -c "
+import yaml
+import subprocess
+
+with open('volunteer_input.yaml') as f:
+    volunteers = yaml.safe_load(f)
+
+for v in volunteers:
+    name = v['name']
+    phone = v['phone']
+    shifts = v['shifts']
+    subprocess.run([
+        'python', 'volunteer_schedule.py',
+        '--name', name,
+        '--phone', phone,
+        '--shifts', str(shifts),
+        '--notify_sms'
+    ])
+"
+
+      - name: Generate calendar files
+        run: python generate_calendar.py
+
+      - name: Commit calendar changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add docs/calendar.html docs/volunteer_schedule.json volunteer_input.yaml
+          git commit -m "Update calendar and schedule data"
+          git push
