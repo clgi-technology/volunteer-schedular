@@ -1,5 +1,8 @@
-import os
+# parse_issue.py
+
+import yaml
 import json
+import os
 import sys
 
 body = os.environ.get("ISSUE_BODY", "")
@@ -7,6 +10,9 @@ body = os.environ.get("ISSUE_BODY", "")
 def extract_field(label):
     marker = f"**{label}**:"
     if marker not in body:
+        # For phone (optional), return empty string if missing
+        if label == "Phone Number":
+            return ""
         print(f"❌ Missing field: {label}")
         sys.exit(1)
     start = body.find(marker) + len(marker)
@@ -18,17 +24,29 @@ def extract_field(label):
 try:
     name = extract_field("Full Name")
     phone = extract_field("Phone Number")
-    if "**Shift Availability**:" not in body:
-        print("❌ Missing field: Shift Availability")
+    if "**What shifts are you available for?**:" not in body:
+        print("❌ Missing field: What shifts are you available for?")
         sys.exit(1)
-    shifts_raw = body.split("**Shift Availability**:")[1].strip()
-    shifts = [line.strip() for line in shifts_raw.splitlines() if line.strip()]
+    shifts_text = body.split("**What shifts are you available for?**:")[1].strip()
+    # Parse shifts line by line
+    shifts = []
+    for line in shifts_text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        # Example line: Monday July 22, 2025, 6:00 PM – Usher
+        # Split by '–' (en dash or hyphen)
+        if '–' in line:
+            date_time_part, role = line.split('–', 1)
+            date_time_part = date_time_part.strip()
+            role = role.strip()
+            shifts.append({"datetime": date_time_part, "role": role})
+        else:
+            print(f"❌ Invalid shift format: {line}")
+            sys.exit(1)
 except Exception as e:
     print(f"❌ Error parsing issue body: {e}")
     sys.exit(1)
-
-# Save parsed data (assuming you want to append shifts as list of strings)
-import yaml
 
 try:
     with open("volunteer_input.yaml", "r") as f:
@@ -41,8 +59,4 @@ data.append({"name": name, "phone": phone, "shifts": shifts})
 with open("volunteer_input.yaml", "w") as f:
     yaml.dump(data, f, sort_keys=False)
 
-print(f"✅ Added {name} with {len(shifts)} shift(s).")
-
-# Set GitHub Actions outputs
-print(f"::set-output name=name::{name}")
-print(f"::set-output name=phone::{phone}")
+print(f"✅ Added {name} with {len(shifts)} shift(s). Phone: {'provided' if phone else 'not provided'}")
