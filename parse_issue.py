@@ -5,31 +5,43 @@ import os
 import sys
 import re
 
-def exit_with_error(message):
-    print(f"❌ {message}")
+def exit_with_error(msg):
+    print(f"❌ {msg}")
     sys.exit(1)
 
-# Step 1: Extract issue form values from GitHub Actions environment
-name = os.environ.get("INPUT_NAME", "").strip()
-phone = os.environ.get("INPUT_PHONE", "").strip()
-shifts_text = os.environ.get("INPUT_SHIFTS", "").strip()
+body = os.environ.get("ISSUE_BODY", "")
+if not body:
+    exit_with_error("ISSUE_BODY environment variable is empty")
 
-if not name:
-    exit_with_error("Missing Full Name")
-if not phone:
-    exit_with_error("Missing Phone Number")
-if not shifts_text:
-    exit_with_error("Missing Shifts")
+# Extract YAML frontmatter from issue body (between --- and ---)
+if body.startswith("---"):
+    try:
+        end = body.find("\n---", 3)
+        if end == -1:
+            exit_with_error("Could not find end of YAML frontmatter")
+        yaml_block = body[3:end]
+        form_data = yaml.safe_load(yaml_block)
+    except Exception as e:
+        exit_with_error(f"Failed to parse YAML frontmatter: {e}")
+else:
+    exit_with_error("Issue body does not start with YAML frontmatter")
 
-# Step 2: Parse each shift line into a dictionary
+name = form_data.get("name")
+phone = form_data.get("phone")
+shifts_raw = form_data.get("shifts")
+
+if not name or not phone or not shifts_raw:
+    exit_with_error("Missing required fields in form submission")
+
+# Parse freeform shifts (textarea), one per line
 shifts = []
-for line in shifts_text.splitlines():
+for line in shifts_raw.splitlines():
     line = line.strip()
     if not line:
         continue
     match = re.match(r"(.+?),\s*(\d{1,2}:\d{2}\s*[APMapm]{2})\s*[–-]\s*(.+)", line)
     if not match:
-        print(f"⚠️ Could not parse line: {line}")
+        print(f"⚠️ Could not parse shift line: {line}")
         continue
     date_str, time_str, role = match.groups()
     shifts.append({
@@ -39,24 +51,23 @@ for line in shifts_text.splitlines():
     })
 
 if not shifts:
-    exit_with_error("No valid shifts parsed.")
+    exit_with_error("No valid shifts parsed")
 
-# Step 3: Load existing YAML and append
+# Append to volunteer_input.yaml
 yaml_file = "volunteer_input.yaml"
 try:
     with open(yaml_file, "r") as f:
-        data = yaml.safe_load(f) or []
+        existing = yaml.safe_load(f) or []
 except FileNotFoundError:
-    data = []
+    existing = []
 
-data.append({
+existing.append({
     "name": name,
     "phone": phone,
     "shifts": shifts
 })
 
-# Step 4: Save back to YAML
 with open(yaml_file, "w") as f:
-    yaml.safe_dump(data, f, sort_keys=False)
+    yaml.safe_dump(existing, f, sort_keys=False)
 
-print(f"✅ Added {name} with {len(shifts)} shift(s).")
+print(f"✅ Submission parsed: {name} ({len(shifts)} shifts)")
