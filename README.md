@@ -21,6 +21,7 @@ This project enables volunteers to submit their availability for multiple roles,
 .
 ├── .github/
 │ ├── workflows/
+│ │ ├── send_reminders.yml
 │ │ ├── deploy-dashboard.yml
 │ │ ├── process-all-volunteers.yml
 │ │ ├── process_submission.yml
@@ -40,6 +41,8 @@ This project enables volunteers to submit their availability for multiple roles,
 ├── admin_dashboard.py
 ├── volunteer_input.yaml
 ├── volunteer_schedule.py
+├── send_reminders.py
+├── parse_issue.py
 ├── generate_calendar.py
 ├── requirements.txt
 ├── requirements-dev.txt
