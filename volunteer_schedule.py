@@ -2,11 +2,11 @@ import os
 import sys
 import json
 import yaml
+import argparse
 from datetime import datetime, date
+from ics import Calendar, Event
 from clicksend_client import SMSApi, SmsMessage, SmsMessageCollection, Configuration, ApiClient
 from clicksend_client.rest import ApiException
-import argparse
-from ics import Calendar, Event
 
 SCHEDULE_FILE = 'volunteer_input.yaml'
 
@@ -31,6 +31,24 @@ def save_schedule(schedule):
     schedule_serializable = convert_dates(schedule)
     with open(SCHEDULE_FILE, 'w') as f:
         yaml.safe_dump(schedule_serializable, f)
+
+def export_to_json(schedule):
+    flat_list = []
+    for entry in schedule:
+        name = entry.get('name')
+        shifts = entry.get('shifts', [])
+        for shift in shifts:
+            flat_list.append({
+                'date': shift.get('date'),
+                'time': shift.get('time'),
+                'volunteer': name,
+                'role': shift.get('role')
+            })
+
+    # Write to docs/volunteer_schedule.json
+    os.makedirs('docs', exist_ok=True)
+    with open('docs/volunteer_schedule.json', 'w') as f:
+        json.dump(flat_list, f, indent=2)
 
 def send_sms(name, phone, shifts):
     username = os.getenv('CLICKSEND_USERNAME')
@@ -117,6 +135,9 @@ def main():
         'notify_sms': args.notify_sms
     })
     save_schedule(schedule)
+
+    # Export updated flat schedule to JSON for the calendar
+    export_to_json(schedule)
 
     if args.notify_sms:
         if phone:
