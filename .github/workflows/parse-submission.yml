@@ -26,27 +26,28 @@ jobs:
       - name: Extract volunteer name and shifts from issue body
         id: extract
         run: |
-          # Save issue body to a file for debugging
-          echo "$GITHUB_EVENT_PATH"
+          # Debug: print event path and issue body JSON
+          echo "GITHUB_EVENT_PATH: $GITHUB_EVENT_PATH"
           cat "$GITHUB_EVENT_PATH"
 
-          # Extract issue body JSON
+          # Extract issue body text
           ISSUE_BODY=$(jq -r .issue.body "$GITHUB_EVENT_PATH")
 
-          # Extract volunteer name after "### Full Name" heading (trim leading/trailing spaces)
+          # Extract volunteer name after "### Full Name" heading
           NAME=$(echo "$ISSUE_BODY" | sed -n '/### Full Name/{n;p;}' | xargs)
 
-          # Extract the shifts after "### What shifts are you available for?" heading
-          # Capture all lines until the next heading or end of input
+          # Extract shifts block after "### What shifts are you available for?"
           SHIFTS=$(echo "$ISSUE_BODY" | awk '/### What shifts are you available for\?/{flag=1; next} /^### /{flag=0} flag' | sed '/^\s*$/d' | tr '\n' ' ' | xargs)
 
-          # Output variables for next steps
+          echo "Extracted name: '$NAME'"
+          echo "Extracted shifts: '$SHIFTS'"
+
           echo "name=$NAME" >> $GITHUB_OUTPUT
           echo "shifts=$SHIFTS" >> $GITHUB_OUTPUT
 
       - name: Run parse_issue.py script
         run: |
-          echo "Name: ${{ steps.extract.outputs.name }}"
-          echo "Shifts: ${{ steps.extract.outputs.shifts }}"
-          python parse_issue.py --name "${{ steps.extract.outputs.name }}" --shifts "${{ steps.extract.outputs.shifts }}"
+          echo "Name: '${{ steps.extract.outputs.name }}'"
+          echo "Shifts: '${{ steps.extract.outputs.shifts }}'"
 
+          python parse_issue.py --name "${{ steps.extract.outputs.name }}" --shifts "${{ steps.extract.outputs.shifts }}"
