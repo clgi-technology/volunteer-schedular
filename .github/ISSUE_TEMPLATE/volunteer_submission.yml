@@ -16,10 +16,9 @@ body:
     id: phone
     attributes:
       label: Phone Number
-      description: Enter your phone number including country code to receive SMS notification reminder beforehand
+      description: Enter your phone number including country code to receive SMS notification reminder beforehand (optional)
       placeholder: "+1234567890"
-    validations:
-      required: false
+    # validations omitted to make it optional
 
   - type: textarea
     id: shifts
