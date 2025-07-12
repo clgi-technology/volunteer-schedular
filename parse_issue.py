@@ -1,73 +1,77 @@
-# parse_issue.py
-
 import yaml
 import os
 import sys
-import re
-
-def exit_with_error(msg):
-    print(f"❌ {msg}")
-    sys.exit(1)
+from datetime import datetime
 
 body = os.environ.get("ISSUE_BODY", "")
-if not body:
-    exit_with_error("ISSUE_BODY environment variable is empty")
 
-# Extract YAML frontmatter from issue body (between --- and ---)
-if body.startswith("---"):
-    try:
-        end = body.find("\n---", 3)
-        if end == -1:
-            exit_with_error("Could not find end of YAML frontmatter")
-        yaml_block = body[3:end]
-        form_data = yaml.safe_load(yaml_block)
-    except Exception as e:
-        exit_with_error(f"Failed to parse YAML frontmatter: {e}")
-else:
-    exit_with_error("Issue body does not start with YAML frontmatter")
+def extract_field(label):
+    marker = f"**{label}**:"
+    if marker not in body:
+        print(f"❌ Missing field: {label}")
+        sys.exit(1)
+    start = body.find(marker) + len(marker)
+    end = body.find('\n', start)
+    if end == -1:
+        end = len(body)
+    return body[start:end].strip()
 
-name = form_data.get("name")
-phone = form_data.get("phone")
-shifts_raw = form_data.get("shifts")
-
-if not name or not phone or not shifts_raw:
-    exit_with_error("Missing required fields in form submission")
-
-# Parse freeform shifts (textarea), one per line
-shifts = []
-for line in shifts_raw.splitlines():
-    line = line.strip()
-    if not line:
-        continue
-    match = re.match(r"(.+?),\s*(\d{1,2}:\d{2}\s*[APMapm]{2})\s*[–-]\s*(.+)", line)
-    if not match:
-        print(f"⚠️ Could not parse shift line: {line}")
-        continue
-    date_str, time_str, role = match.groups()
-    shifts.append({
-        "date": date_str.strip(),
-        "time": time_str.strip(),
-        "role": role.strip()
-    })
-
-if not shifts:
-    exit_with_error("No valid shifts parsed")
-
-# Append to volunteer_input.yaml
-yaml_file = "volunteer_input.yaml"
 try:
-    with open(yaml_file, "r") as f:
-        existing = yaml.safe_load(f) or []
+    name = extract_field("Full Name")
+    phone = extract_field("Phone Number")
+    if "**What shifts are you available for?**:" not in body:
+        print("❌ Missing field: What shifts are you available for?")
+        sys.exit(1)
+    shifts_text = body.split("**What shifts are you available for?**:")[1].strip()
+    # Each shift on its own line:
+    lines = [line.strip() for line in shifts_text.splitlines() if line.strip()]
+
+    shifts = []
+    for line in lines:
+        # Example line: Monday July 22, 2025, 6:00 PM – Usher
+        try:
+            # Split on the "–" dash character (note: this is an en dash, not a hyphen)
+            date_time_part, role = line.split("–")
+            role = role.strip()
+
+            # date_time_part = "Monday July 22, 2025, 6:00 PM"
+            # Remove weekday by splitting on first space:
+            # Or just parse entire date_time_part with datetime.strptime (ignore weekday)
+            
+            # Remove weekday (first word)
+            parts = date_time_part.strip().split(' ', 1)
+            if len(parts) < 2:
+                raise ValueError("Date/time format incorrect")
+            date_time_str = parts[1].strip()
+
+            # Parse date_time_str like "July 22, 2025, 6:00 PM"
+            dt = datetime.strptime(date_time_str, "%B %d, %Y, %I:%M %p")
+
+            # Format date/time as ISO strings
+            iso_date = dt.strftime("%Y-%m-%d")
+            iso_time = dt.strftime("%H:%M")
+
+            shifts.append({
+                "date": iso_date,
+                "time": iso_time,
+                "role": role
+            })
+        except Exception as e:
+            print(f"❌ Failed to parse shift line: '{line}' - {e}")
+            sys.exit(1)
+except Exception as e:
+    print(f"❌ Error parsing issue body: {e}")
+    sys.exit(1)
+
+try:
+    with open("volunteer_input.yaml", "r") as f:
+        data = yaml.safe_load(f) or []
 except FileNotFoundError:
-    existing = []
+    data = []
 
-existing.append({
-    "name": name,
-    "phone": phone,
-    "shifts": shifts
-})
+data.append({"name": name, "phone": phone, "shifts": shifts})
 
-with open(yaml_file, "w") as f:
-    yaml.safe_dump(existing, f, sort_keys=False)
+with open("volunteer_input.yaml", "w") as f:
+    yaml.dump(data, f, sort_keys=False)
 
-print(f"✅ Submission parsed: {name} ({len(shifts)} shifts)")
+print(f"✅ Added {name} with {len(shifts)} shift(s).")
