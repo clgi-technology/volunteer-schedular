@@ -1,31 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Volunteer Schedule Calendar</title>
-<style>
-  body { font-family: Arial, sans-serif; padding: 1em; }
-  table { border-collapse: collapse; width: 100%; }
-  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-  th { background-color: #f2f2f2; }
-  select, input[type="date"] { margin-bottom: 1em; padding: 0.5em; font-size: 1em; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Volunteer Schedule Calendar</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 1em; background-color: #f9f9f9; }
+    h1 { text-align: center; color: #333; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1em; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #28a745; color: white; }
+    tr:nth-child(even) { background-color: #f2f2f2; }
+    select, input[type="date"] { margin: 0.5em 1em 1em 0; padding: 0.5em; font-size: 1em; }
+    .filters { text-align: center; margin-bottom: 1em; }
+    .back-link { text-align: center; margin-top: 2em; }
+  </style>
 </head>
 <body>
 
 <h1>Volunteer Schedule Calendar</h1>
 
-<label for="date-filter">Filter by Date:</label>
-<input type="date" id="date-filter" onchange="filterCalendar()" />
+<div class="filters">
+  <label for="date-filter">Filter by Date:</label>
+  <input type="date" id="date-filter" onchange="filterCalendar()" />
 
-<label for="role-filter">Filter by Role:</label>
-<select id="role-filter" onchange="filterCalendar()">
-  <option value="All">All</option>
-  <option value="Greeter">Greeter</option>
-<option value="Reader">Reader</option>
-<option value="Usher">Usher</option>
-</select>
+  <label for="role-filter">Filter by Role:</label>
+  <select id="role-filter" onchange="filterCalendar()">
+    <option value="All">All</option>
+    <option value="Greeter">Greeter</option>
+    <option value="Reader">Reader</option>
+    <option value="Usher">Usher</option>
+  </select>
+</div>
 
 <table>
   <thead>
@@ -39,8 +45,26 @@
   <tbody id="calendar-body"></tbody>
 </table>
 
+<div class="back-link">
+  <a href="index.html">← Back to Sign-Up Page</a>
+</div>
+
 <script>
-let volunteerData = [{"date": "2025-07-07", "time": "18:00", "volunteer": "John Doe", "role": "Usher"}, {"date": "2025-07-09", "time": "09:00", "volunteer": "John Doe", "role": "Greeter"}, {"date": "2025-07-12", "time": "14:00", "volunteer": "Jane Smith", "role": "Reader"}, {"date": "2025-07-07", "time": "18:00", "volunteer": "John Doe", "role": "Usher"}, {"date": "2025-07-09", "time": "09:00", "volunteer": "John Doe", "role": "Greeter"}];
+let volunteerData = [];
+
+fetch('volunteer_schedule.json')
+  .then(response => response.json())
+  .then(data => {
+    volunteerData = data.flatMap(entry =>
+      entry.shifts.map(shift => ({
+        date: shift.date,
+        time: shift.time,
+        volunteer: entry.name,
+        role: shift.role
+      }))
+    );
+    renderCalendar(volunteerData);
+  });
 
 function renderCalendar(data) {
   const tableBody = document.getElementById('calendar-body');
@@ -73,8 +97,6 @@ function filterCalendar() {
 
   renderCalendar(filtered);
 }
-
-window.onload = () => renderCalendar(volunteerData);
 </script>
 
 </body>
