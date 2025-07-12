@@ -1,35 +1,52 @@
-name: Parse Volunteer Submission
+name: Process Volunteer Submission
 
 on:
   issues:
     types: [opened]
 
 jobs:
-  parse_submission:
+  process-submission:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Extract name and shifts from issue body
-        id: extract_fields
-        shell: bash
-        env:
-          ISSUE_BODY: ${{ github.event.issue.body }}
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
         run: |
-          # Extract Full Name from Markdown section
+          pip install clicksend-client
+          pip install ics
+          pip install pyyaml
+
+      - name: Extract volunteer name and shifts from issue body
+        id: extract
+        run: |
+          # Save issue body to a file for debugging
+          echo "$GITHUB_EVENT_PATH"
+          cat "$GITHUB_EVENT_PATH"
+
+          # Extract issue body JSON
+          ISSUE_BODY=$(jq -r .issue.body "$GITHUB_EVENT_PATH")
+
+          # Extract volunteer name after "### Full Name" heading (trim leading/trailing spaces)
           NAME=$(echo "$ISSUE_BODY" | sed -n '/### Full Name/{n;p;}' | xargs)
-          
-          # Extract shifts lines after header until next ### or empty line
-          SHIFTS=$(echo "$ISSUE_BODY" | awk '/### What shifts are you available for?/{flag=1;next}/###/{flag=0}flag' | sed '/^\s*$/d' | paste -sd "\\n" -)
 
-          echo "Extracted NAME=$NAME"
-          echo -e "Extracted SHIFTS:\n$SHIFTS"
+          # Extract the shifts after "### What shifts are you available for?" heading
+          # Capture all lines until the next heading or end of input
+          SHIFTS=$(echo "$ISSUE_BODY" | awk '/### What shifts are you available for\?/{flag=1; next} /^### /{flag=0} flag' | sed '/^\s*$/d' | tr '\n' ' ' | xargs)
 
+          # Output variables for next steps
           echo "name=$NAME" >> $GITHUB_OUTPUT
           echo "shifts=$SHIFTS" >> $GITHUB_OUTPUT
 
-      - name: Run parse_issue.py
+      - name: Run parse_issue.py script
         run: |
-          python parse_issue.py --name "${{ steps.extract_fields.outputs.name }}" --shifts "${{ steps.extract_fields.outputs.shifts }}"
+          echo "Name: ${{ steps.extract.outputs.name }}"
+          echo "Shifts: ${{ steps.extract.outputs.shifts }}"
+          python parse_issue.py --name "${{ steps.extract.outputs.name }}" --shifts "${{ steps.extract.outputs.shifts }}"
+
