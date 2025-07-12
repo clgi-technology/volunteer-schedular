@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Tally Webhook → AWS Lambda → GitHub Actions trigger
+
+Parameters:
+  GitHubToken:
+    Type: String
+    NoEcho: true
+    Description: GitHub Personal Access Token (with workflow permission)
+  GitHubRepo:
+    Type: String
+    Description: e.g., clgi-technology/volunteer-scheduler
+
+Resources:
+  TallyLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: TallyWebhookLambdaRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action: "sts:assumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  TallyWebhookLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: TallyWebhookHandler
+      Runtime: python3.11
+      Role: !GetAtt TallyLambdaRole.Arn
+      Handler: index.lambda_handler
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import urllib3
+
+          GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+          GITHUB_REPO = os.environ.get("GITHUB_REPO")
+          WORKFLOW_FILENAME = "process_submission.yml"
+          GITHUB_REF = "main"
+
+          http = urllib3.PoolManager()
+
+          def lambda_handler(event, context):
+              try:
+                  body = json.loads(event.get("body", "{}"))
+                  answers = body.get("data", {}).get("fields", {})
+
+                  name = answers.get("name", "Unknown")
+                  phone = answers.get("phone", "N/A")
+                  shifts = answers.get("shifts", "[]")
+
+                  github_url = f"https://api.github.com/repos/{GITHUB_REPO}/actions/workflows/{WORKFLOW_FILENAME}/dispatches"
+                  payload = json.dumps({
+                      "ref": GITHUB_REF,
+                      "inputs": {
+                          "name": name,
+                          "phone": phone,
+                          "shifts": shifts
+                      }
+                  })
+
+                  headers = {
+                      "Authorization": f"Bearer {GITHUB_TOKEN}",
+                      "Accept": "application/vnd.github+json",
+                      "Content-Type": "application/json"
+                  }
+
+                  r = http.request("POST", github_url, body=payload, headers=headers)
+                  return {
+                      "statusCode": r.status,
+                      "body": json.dumps({"github_response": r.data.decode("utf-8")})
+                  }
+
+              except Exception as e:
+                  return {
+                      "statusCode": 500,
+                      "body": json.dumps({"error": str(e)})
+                  }
+      Timeout: 10
+      MemorySize: 128
+      Environment:
+        Variables:
+          GITHUB_TOKEN: !Ref GitHubToken
+          GITHUB_REPO: !Ref GitHubRepo
+
+  TallyWebhookApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: TallyWebhookAPI
+      ProtocolType: HTTP
+      Target: !GetAtt TallyWebhookLambda.Arn
+
+  TallyWebhookIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref TallyWebhookApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TallyWebhookLambda.Arn}/invocations
+      PayloadFormatVersion: "2.0"
+
+  TallyWebhookRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref TallyWebhookApi
+      RouteKey: "POST /"
+      Target: !Sub integrations/${TallyWebhookIntegration}
+
+  TallyWebhookStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref TallyWebhookApi
+      StageName: prod
+      AutoDeploy: true
+
+  TallyLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref TallyWebhookLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TallyWebhookApi}/*/*/
+
+Outputs:
+  WebhookURL:
+    Description: Public URL to receive Tally submissions
+    Value: !Sub "https://${TallyWebhookApi}.execute-api.${AWS::Region}.amazonaws.com/prod/"
