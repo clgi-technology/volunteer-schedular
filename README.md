@@ -24,7 +24,8 @@ This project enables volunteers to submit their availability for multiple roles,
 │ │ ├── send_reminders.yml
 │ │ ├── deploy-dashboard.yml
 │ │ ├── process-all-volunteers.yml
-│ │ ├── process_submission.yml
+│ │ ├── handle-dispatch.yml
+│ │ ├── parse-submission.yml
 │ │ └── quality-gate.yml
 │ └── ISSUE_TEMPLATE/
 │ └── volunteer_submission.yml
