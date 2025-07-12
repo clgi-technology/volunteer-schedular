@@ -19,7 +19,7 @@ body:
       description: Enter your phone number including country code to receive SMS notification reminder beforehand
       placeholder: "+1234567890"
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: shifts
