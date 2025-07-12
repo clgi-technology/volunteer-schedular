@@ -21,7 +21,7 @@ body:
     validations:
       required: true
 
-    - type: textarea
+  - type: textarea
     id: shifts
     attributes:
       label: Shift Availability
@@ -29,4 +29,3 @@ body:
       placeholder: '[{"date":"YYYY-MM-DD","time":"HH:MM","role":"Role"}]'
     validations:
       required: true
-
