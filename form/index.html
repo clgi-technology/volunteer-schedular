@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Volunteer Signup</title>
+</head>
+<body>
+  <h1>Volunteer Signup Form</h1>
+  <form id="volunteer-form">
+    <label for="name">Full Name:</label><br />
+    <input type="text" id="name" name="name" required /><br /><br />
+
+    <label for="phone">Phone Number (with country code):</label><br />
+    <input type="tel" id="phone" name="phone" required /><br /><br />
+
+    <label for="shifts">Shifts (JSON format):</label><br />
+    <textarea id="shifts" name="shifts" rows="6" required placeholder='[{"date":"2025-07-07","time":"18:00","role":"Usher"}]'></textarea><br /><br />
+
+    <label>
+      <input type="checkbox" id="notify" name="notify" checked />
+      Send SMS Reminder Notification
+    </label><br /><br />
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <p id="status"></p>
+
+  <script>
+    const form = document.getElementById('volunteer-form');
+    const status = document.getElementById('status');
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const name = form.name.value.trim();
+      const phone = form.phone.value.trim();
+      const shifts = form.shifts.value.trim();
+      const notify = form.notify.checked;
+
+      try {
+        JSON.parse(shifts); // validate JSON
+      } catch {
+        status.textContent = "Shifts JSON is invalid.";
+        return;
+      }
+
+      // Call GitHub API to dispatch workflow (you need to provide a PAT with repo permissions)
+      // For demo, this just logs
+      status.textContent = "Submission received. Processing...";
+
+      // TODO: Replace with actual GitHub Actions API call or your server endpoint
+      console.log({
+        name,
+        phone,
+        shifts,
+        notify,
+      });
+
+      // Simple demo success:
+      setTimeout(() => {
+        status.textContent = "Thank you for submitting your availability!";
+        form.reset();
+      }, 1500);
+    });
+  </script>
+</body>
+</html>
