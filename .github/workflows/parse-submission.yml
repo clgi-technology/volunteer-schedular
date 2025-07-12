@@ -4,6 +4,9 @@ on:
   issues:
     types: [opened]
 
+permissions:
+  contents: write
+
 jobs:
   parse-submission:
     runs-on: ubuntu-latest
@@ -21,7 +24,7 @@ jobs:
         run: |
           pip install clicksend-client ics pyyaml
 
-      - name: Extract volunteer name, phone and shifts from issue body
+      - name: Extract volunteer name and shifts from issue body
         id: extract
         run: |
           ISSUE_BODY=$(jq -r .issue.body "$GITHUB_EVENT_PATH")
@@ -30,14 +33,7 @@ jobs:
           echo "$ISSUE_BODY"
           echo "-----"
 
-          # Extract first non-empty line after ### Full Name
-          NAME=$(echo "$ISSUE_BODY" | awk '
-            BEGIN {found=0}
-            /^### Full Name/ {found=1; next}
-            found && NF {print; exit}
-          ')
-          NAME=$(echo "$NAME" | xargs)
-
+          NAME=$(echo "$ISSUE_BODY" | sed -n '/### Full Name/{n;p;}' | xargs)
           PHONE=$(echo "$ISSUE_BODY" | sed -n '/### Phone Number/{n;p;}' | xargs)
 
           SHIFTS=$(echo "$ISSUE_BODY" | awk '/### What shifts are you available for\?/{flag=1; next} /^### /{flag=0} flag')
@@ -59,10 +55,16 @@ jobs:
           echo "$CLEANED_SHIFTS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Run parse_issue.py script
+      - name: Run volunteer_schedule.py script
         run: |
-          echo "✅ Running submission parser..."
-          python parse_issue.py \
+          python volunteer_schedule.py \
             --name "${{ steps.extract.outputs.name }}" \
             --phone "${{ steps.extract.outputs.phone }}" \
-            --shifts "${{ steps.extract.outputs.shifts }}"
+            --shifts "$(echo "${{ steps.extract.outputs.shifts }}" | python3 -c "import sys,json; import re; from datetime import datetime; lines=sys.stdin.read().strip().split('\n'); shifts=[]; \
+for line in lines: \
+  parts = re.split(r'\\s+[-–—]\\s+', line); \
+  if len(parts) == 2: \
+    dt = datetime.strptime(parts[0].strip(), '%A %B %d, %Y, %I:%M %p').strftime('%Y-%m-%d %H:%M'); \
+    shifts.append({'date': dt.split()[0], 'time': dt.split()[1], 'role': parts[1].strip()}); \
+print(json.dumps(shifts))") \
+            --notify_sms
