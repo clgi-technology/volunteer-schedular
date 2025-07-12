@@ -21,7 +21,7 @@ jobs:
         run: |
           pip install clicksend-client ics pyyaml
 
-      - name: Extract volunteer name and shifts from issue body
+      - name: Extract volunteer name, phone and shifts from issue body
         id: extract
         run: |
           ISSUE_BODY=$(jq -r .issue.body "$GITHUB_EVENT_PATH")
@@ -30,14 +30,15 @@ jobs:
           echo "$ISSUE_BODY"
           echo "-----"
 
-          NAME=$(echo "$ISSUE_BODY" | sed -n '/### Full Name/{n;p;}' | xargs)
+          # Improved name extraction: get line after "### Full Name" only if not another heading
+          NAME=$(echo "$ISSUE_BODY" | awk '/### Full Name/{getline; if($0 ~ /^### /) print ""; else print $0}' | xargs)
           PHONE=$(echo "$ISSUE_BODY" | sed -n '/### Phone Number/{n;p;}' | xargs)
 
           SHIFTS=$(echo "$ISSUE_BODY" | awk '/### What shifts are you available for\?/{flag=1; next} /^### /{flag=0} flag')
           CLEANED_SHIFTS=$(echo "$SHIFTS" | sed '/^\s*$/d')
 
-          echo "👤 Name: $NAME"
-          echo "📱 Phone: $PHONE"
+          echo "👤 Name: '$NAME'"
+          echo "📱 Phone: '$PHONE'"
           echo "📆 Shifts:"
           echo "$CLEANED_SHIFTS"
 
@@ -59,15 +60,3 @@ jobs:
             --name "${{ steps.extract.outputs.name }}" \
             --phone "${{ steps.extract.outputs.phone }}" \
             --shifts "${{ steps.extract.outputs.shifts }}"
-
-      - name: Trigger dispatch workflow
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-          event-type: process-volunteer
-          client-payload: |
-            {
-              "name": "${{ steps.extract.outputs.name }}",
-              "phone": "${{ steps.extract.outputs.phone }}"
-            }
