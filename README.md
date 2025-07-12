@@ -106,57 +106,55 @@ The **Admin Dashboard** allows authorized users to manage volunteers, view submi
 2. Install dependencies:  
    ```bash
    pip install -r requirements.txt
-```
+
 3. Run the dashboard:
 
 ```
 python admin_dashboard.py
 ```
-Access the dashboard in your browser at http://localhost:5000 (default Flask port).
+4. Access the dashboard in your browser at http://localhost:5000 (default Flask port).
 
-Running via Docker
-Build the image:
+### Running via Docker
+1. Build the image:
 
 ```
 docker build -t volunteer-admin-dashboard ./admin_dashboard
-Run the container (mapping ports and mounting volumes as needed):
 ```
+
+2. Run the container (mapping ports and mounting volumes as needed):
+
 
 ```
 docker run -p 5000:5000 -v $(pwd)/volunteer_input.yaml:/app/volunteer_input.yaml volunteer-admin-dashboard
 ```
 
-Open your browser at http://localhost:5000.
+3. Open your browser at http://localhost:5000.
 
-🧪 Local Testing
+## 🧪 Local Testing
 
 ```
 # Set environment variables for testing
 export EMAIL_SENDER="your_email@example.com"
 export EMAIL_PASSWORD="your_email_password"
-```
 
 # Run volunteer scheduling script manually
-```
 python volunteer_schedule.py --name "Alice" --phone "+1234567890" --shifts '[{"date": "2025-07-15", "time": "10:00", "role": "Greeter"}]'
-```
 
 # Generate calendar HTML and JSON files
-```
 python generate_calendar.py
 ```
 
-🛠️ Optional Enhancements
+## 🛠️ Optional Enhancements
 Send calendar invites (ICS) via email
 
 Web dashboard to manage volunteers directly
 
 Export or sync calendar to Google Calendar or Outlook
 
-📘 License
+## 📘 License
 This project is licensed under the MIT License.
 
-🙏 Acknowledgments
+## 🙏 Acknowledgments
 GitHub Actions
 
 GitHub Pages
