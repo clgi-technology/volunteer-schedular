@@ -21,10 +21,18 @@ This project enables volunteers to submit their availability for multiple roles,
 
 .
 ├── .github/
-│   └── workflows/
-│       └── process_submission.yml
+│   ├── workflows/
+│       ├── deploy-dashboard.yml
+│       ├── process-all-volunteers.yml
+│       ├── process_submission.yml
+│       └── quality-gate.yml
+│   └── ISSUE_TEMPLATE/
+│       └── volunteer_submission.yml
+├── admin_dashboard/
+│   └── Dockerfile
 ├── docs/
 │   ├── calendar.html
+│   ├── index.html
 │   └── volunteer_schedule.json
 ├── form/
 │   └── index.html
