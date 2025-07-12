@@ -55,14 +55,7 @@ let volunteerData = [];
 fetch('volunteer_schedule.json')
   .then(response => response.json())
   .then(data => {
-    volunteerData = data.flatMap(entry =>
-      entry.shifts.map(shift => ({
-        date: shift.date,
-        time: shift.time,
-        volunteer: entry.name,
-        role: shift.role
-      }))
-    );
+    volunteerData = data;  // use flat array as is
     renderCalendar(volunteerData);
   });
 
