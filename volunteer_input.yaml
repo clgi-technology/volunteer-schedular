@@ -1,16 +1,25 @@
 - name: John Doe
-  phone: +1234567890
+  phone: 1234567890
   shifts:
-    - date: 2025-07-07
-      time: "18:00"
-      role: Usher
-    - date: 2025-07-09
-      time: "09:00"
-      role: Greeter
-
+  - date: '2025-07-07'
+    role: Usher
+    time: '18:00'
+  - date: '2025-07-09'
+    role: Greeter
+    time: 09:00
 - name: Jane Smith
-  phone: +1987654321
+  phone: 1987654321
   shifts:
-    - date: 2025-07-12
-      time: "14:00"
-      role: Reader
+  - date: '2025-07-12'
+    role: Reader
+    time: '14:00'
+- name: John Doe
+  notify_sms: true
+  phone: '+1234567890'
+  shifts:
+  - date: '2025-07-07'
+    role: Usher
+    time: '18:00'
+  - date: '2025-07-09'
+    role: Greeter
+    time: 09:00

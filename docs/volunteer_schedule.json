@@ -1,29 +1,32 @@
 [
   {
+    "date": "2025-07-07",
+    "time": "18:00",
     "volunteer": "John Doe",
-    "phone": "+1234567890",
-    "shifts": [
-      {
-        "date": "2025-07-07",
-        "time": "18:00",
-        "role": "Usher"
-      },
-      {
-        "date": "2025-07-09",
-        "time": "09:00",
-        "role": "Greeter"
-      }
-    ]
+    "role": "Usher"
   },
   {
+    "date": "2025-07-09",
+    "time": "09:00",
+    "volunteer": "John Doe",
+    "role": "Greeter"
+  },
+  {
+    "date": "2025-07-12",
+    "time": "14:00",
     "volunteer": "Jane Smith",
-    "phone": "+1987654321",
-    "shifts": [
-      {
-        "date": "2025-07-12",
-        "time": "14:00",
-        "role": "Reader"
-      }
-    ]
+    "role": "Reader"
+  },
+  {
+    "date": "2025-07-07",
+    "time": "18:00",
+    "volunteer": "John Doe",
+    "role": "Usher"
+  },
+  {
+    "date": "2025-07-09",
+    "time": "09:00",
+    "volunteer": "John Doe",
+    "role": "Greeter"
   }
 ]
