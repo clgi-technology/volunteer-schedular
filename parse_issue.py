@@ -1,104 +1,160 @@
 import os
+import sys
 import json
 import yaml
-from datetime import datetime
-from pathlib import Path
+from datetime import datetime, date
+from clicksend_client import SMSApi, SmsMessage, SmsMessageCollection, Configuration, ApiClient
+from clicksend_client.rest import ApiException
+import argparse
+from ics import Calendar, Event
+import re
 
-ISSUE_BODY = os.environ.get("ISSUE_BODY", "")
-YAML_FILE = "volunteer_input.yaml"
-JSON_FILE = "docs/volunteer_schedule.json"
+SCHEDULE_FILE = 'volunteer_input.yaml'
 
-# --- Robust Markdown Field Parser ---
-def parse_fields_from_issue(body):
-    fields = {}
-    current_field = None
-    for line in body.splitlines():
-        line = line.strip()
-        if line.startswith("### "):
-            current_field = line[4:].strip()
-            fields[current_field] = ""
-        elif current_field and line and not line.startswith("_"):
-            if fields[current_field]:
-                fields[current_field] += " " + line
-            else:
-                fields[current_field] = line
-    return fields
+def load_schedule():
+    if os.path.exists(SCHEDULE_FILE):
+        with open(SCHEDULE_FILE, 'r') as f:
+            return yaml.safe_load(f) or []
+    return []
 
-# --- Parse Shifts from Natural Text ---
+def save_schedule(schedule):
+    # Convert any date objects to strings before saving
+    def convert_dates(obj):
+        if isinstance(obj, list):
+            return [convert_dates(item) for item in obj]
+        elif isinstance(obj, dict):
+            return {key: convert_dates(value) for key, value in obj.items()}
+        elif isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        else:
+            return obj
+
+    schedule_serializable = convert_dates(schedule)
+    with open(SCHEDULE_FILE, 'w') as f:
+        yaml.safe_dump(schedule_serializable, f)
+
+def send_sms(name, phone, shifts):
+    username = os.getenv('CLICKSEND_USERNAME')
+    api_key = os.getenv('CLICKSEND_API_KEY')
+
+    if not username or not api_key:
+        print("Missing ClickSend credentials")
+        return
+
+    configuration = Configuration()
+    configuration.username = username
+    configuration.password = api_key
+
+    sms_api = SMSApi(ApiClient(configuration))
+
+    messages = []
+    for shift in shifts:
+        date_obj = datetime.strptime(shift['date'], '%Y-%m-%d')
+        date_str = date_obj.strftime('%A, %B %d, %Y')
+        time_str = shift['time']
+        role = shift['role']
+
+        text = (
+            f"Hi {name}! You're scheduled to {role} on {date_str} at {time_str}. Thank you for volunteering!"
+        )
+        messages.append(
+            SmsMessage(
+                source="python",
+                body=text,
+                to=phone,
+                _from="Volunteers"
+            )
+        )
+
+    sms_collection = SmsMessageCollection(messages=messages)
+    try:
+        response = sms_api.sms_send_post(sms_collection)
+        print(f"SMS sent successfully: {response}")
+    except ApiException as e:
+        print(f"ClickSend API error: {e}")
+    except Exception as e:
+        print(f"Unexpected error while sending SMS: {e}")
+
+def generate_ics(name, shifts):
+    cal = Calendar()
+    for shift in shifts:
+        event = Event()
+        dt = datetime.strptime(f"{shift['date']} {shift['time']}", '%Y-%m-%d %H:%M')
+        event.name = f"{shift['role']} shift"
+        event.begin = dt
+        event.duration = {"hours": 1}
+        event.description = f"Volunteer: {name}"
+        cal.events.add(event)
+    ics_path = f"{name.replace(' ', '_')}_shifts.ics"
+    with open(ics_path, 'w') as f:
+        f.writelines(cal)
+    print(f"ICS calendar invite saved to {ics_path}")
+
 def parse_shifts(text):
     shifts = []
     lines = text.splitlines()
     for line in lines:
-        if not line.strip():
+        line = line.strip()
+        if not line:
             continue
+
+        # Match format: "Friday July 25, 2025, 7:00 PM - Usher"
+        match = re.match(r"^(.*\d{4}, \d{1,2}:\d{2} (AM|PM))\s*-\s*(.+)$", line)
+        if match:
+            datetime_part = match.group(1).strip()
+            role = match.group(3).strip()
+        else:
+            # Fallback: no role provided
+            datetime_part = line
+            role = "Volunteer"
+
         try:
-            # Basic example: "Friday August 12, 2025, 8:00 PM"
-            dt = datetime.strptime(line.strip(), "%A %B %d, %Y, %I:%M %p")
+            dt = datetime.strptime(datetime_part, "%A %B %d, %Y, %I:%M %p")
             shift = {
                 "date": dt.strftime("%Y-%m-%d"),
                 "time": dt.strftime("%H:%M"),
-                "role": "Volunteer"  # Default role
+                "role": role
             }
             shifts.append(shift)
         except Exception as e:
             print(f"⚠️ Failed to parse shift line: '{line}': {e}")
     return shifts
 
-# --- Main Execution ---
 def main():
-    fields = parse_fields_from_issue(ISSUE_BODY)
+    parser = argparse.ArgumentParser(description='Process volunteer shifts and send SMS.')
+    parser.add_argument('--name', required=True, help='Volunteer full name')
+    parser.add_argument('--phone', help='Volunteer phone number (optional, required if SMS reminder is enabled)')
+    parser.add_argument('--shifts', required=True, help='Multi-line text of shifts')
+    parser.add_argument('--notify_sms', action='store_true', help='Send SMS notification if set')
 
-    required_fields = ["Full Name", "What shifts are you available for?"]
-    for field in required_fields:
-        if not fields.get(field):
-            print(f"❌ Missing field: {field}")
-            exit(1)
+    args = parser.parse_args()
 
-    name = fields["Full Name"]
-    phone = fields.get("Phone Number", "")
-    shift_text = fields["What shifts are you available for?"]
-    shifts = parse_shifts(shift_text)
+    name = args.name
+    phone = args.phone
+    shifts_text = args.shifts
+
+    shifts = parse_shifts(shifts_text)
 
     if not shifts:
         print("❌ No valid shifts parsed.")
-        exit(1)
+        sys.exit(1)
 
-    # Append to volunteer_input.yaml
-    yaml_entry = {
-        "name": name,
-        "phone": phone,
-        "shifts": shifts
-    }
+    schedule = load_schedule()
+    schedule.append({
+        'name': name,
+        'phone': phone,
+        'shifts': shifts,
+        'notify_sms': args.notify_sms
+    })
+    save_schedule(schedule)
 
-    if Path(YAML_FILE).exists():
-        with open(YAML_FILE, "r") as f:
-            yaml_data = yaml.safe_load(f) or []
-    else:
-        yaml_data = []
+    if args.notify_sms:
+        if phone:
+            send_sms(name, phone, shifts)
+        else:
+            print("SMS notification requested but no phone number provided.")
 
-    yaml_data.append(yaml_entry)
+    generate_ics(name, shifts)
 
-    with open(YAML_FILE, "w") as f:
-        yaml.safe_dump(yaml_data, f, sort_keys=False)
-
-    print(f"✅ Saved to {YAML_FILE}")
-
-    # Build docs/volunteer_schedule.json
-    flat_list = []
-    for entry in yaml_data:
-        for shift in entry["shifts"]:
-            flat_list.append({
-                "date": shift["date"],
-                "time": shift["time"],
-                "volunteer": entry["name"],
-                "role": shift.get("role", "Volunteer")
-            })
-
-    os.makedirs(os.path.dirname(JSON_FILE), exist_ok=True)
-    with open(JSON_FILE, "w") as f:
-        json.dump(flat_list, f, indent=2)
-
-    print(f"✅ Updated {JSON_FILE} with {len(flat_list)} entries.")
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
