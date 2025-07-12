@@ -76,7 +76,7 @@
 </table>
 
 <div class="back-link">
-  <a href="index.html">← Back to Sign-Up Page</a>
+  <a id="back-link">← Back to Sign-Up Page</a>
 </div>
 
 <script>
@@ -120,6 +120,9 @@ function filterCalendar() {
 
   renderCalendar(filtered);
 }
+
+// Dynamically link back to root GitHub Pages
+document.getElementById('back-link').href = location.origin + location.pathname.split('/').slice(0, -1).join('/') + '/';
 </script>
 
 </body>
