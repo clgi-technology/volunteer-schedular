@@ -1,58 +1,45 @@
-name: Process Submission
+import os
+import sys
+import clicksend_client
+from clicksend_client import SMSApi, SmsMessage, SmsMessageCollection
+from clicksend_client.rest import ApiException
 
-on:
-  workflow_dispatch:
-  repository_dispatch:
-  issues:
-    types: [opened]
+def send_sms(to_phone, message_body):
+    username = os.getenv('CLICKSEND_USERNAME')
+    api_key = os.getenv('CLICKSEND_API_KEY')
 
-permissions:
-  contents: write
+    if not username or not api_key:
+        print("Missing CLICKSEND_USERNAME or CLICKSEND_API_KEY environment variables.")
+        sys.exit(1)
 
-jobs:
-  process:
-    runs-on: ubuntu-latest
+    configuration = clicksend_client.Configuration()
+    configuration.username = username
+    configuration.password = api_key
+    sms_api = SMSApi(clicksend_client.ApiClient(configuration))
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    sms = SmsMessage(
+        source="python",
+        body=message_body,
+        to=to_phone
+    )
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+    sms_collection = SmsMessageCollection(messages=[sms])
+    try:
+        response = sms_api.sms_send_post(sms_collection)
+        print(f"SMS sent successfully to {to_phone}: {response}")
+    except ApiException as e:
+        print(f"Failed to send SMS: {e}")
+        sys.exit(1)
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyyaml clicksend-client
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Usage: python send_sms.py <phone_number> <name>")
+        sys.exit(1)
 
-      - name: Run parser
-        id: parse
-        env:
-          ISSUE_BODY: ${{ github.event.issue.body }}
-        run: python parse_issue.py
+    phone_number = sys.argv[1]
+    name = sys.argv[2]
 
-      - name: Commit updated volunteer_input.yaml
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add volunteer_input.yaml
-          git commit -m "Append new volunteer submission" || echo "No changes to commit"
-          git push
+    # Customize your message here
+    message = f"Hi {name}, thank you for signing up to volunteer! We'll remind you of your shifts soon."
 
-      - name: Send SMS Notification
-        if: steps.parse.outputs.phone != ''
-        env:
-          CLICKSEND_USERNAME: ${{ secrets.CLICKSEND_USERNAME }}
-          CLICKSEND_API_KEY: ${{ secrets.CLICKSEND_API_KEY }}
-        run: |
-          python send_sms.py "${{ steps.parse.outputs.phone }}" "${{ steps.parse.outputs.name }}"
-
-      - name: Trigger Process All Volunteers workflow
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: clgi-technology/volunteer-schedular
-          event-type: process-all-volunteers
+    send_sms(phone_number, message)
