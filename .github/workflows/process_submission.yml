@@ -41,7 +41,6 @@ import json
 with open('issue_body.txt') as f:
     body = f.read()
 
-# Extract fields
 def extract_field(label):
     start = body.find(f'**{label}**:') + len(f'**{label}**:')
     end = body.find('\\n', start)
@@ -64,35 +63,17 @@ with open('volunteer_input.yaml', 'w') as f:
     yaml.dump(data, f, sort_keys=False)
 "
 
-      - name: Process each volunteer
-        run: |
-          python -c "
-import yaml
-import subprocess
-
-with open('volunteer_input.yaml') as f:
-    volunteers = yaml.safe_load(f)
-
-for v in volunteers:
-    name = v['name']
-    phone = v['phone']
-    shifts = v['shifts']
-    subprocess.run([
-        'python', 'volunteer_schedule.py',
-        '--name', name,
-        '--phone', phone,
-        '--shifts', str(shifts),
-        '--notify_sms'
-    ])
-"
-
-      - name: Generate calendar files
-        run: python generate_calendar.py
-
-      - name: Commit calendar changes
+      - name: Commit updated volunteer_input.yaml
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add docs/calendar.html docs/volunteer_schedule.json volunteer_input.yaml
-          git commit -m "Update calendar and schedule data"
+          git add volunteer_input.yaml
+          git commit -m "Append new volunteer submission"
           git push
+
+      - name: Trigger Process All Volunteers workflow
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: clgi-technology/volunteer-schedular
+          event-type: process-all-volunteers
