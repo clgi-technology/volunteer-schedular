@@ -25,13 +25,11 @@ body:
     id: shifts
     attributes:
       label: What shifts are you available for?
-      description: |
-        Please describe each shift on a new line like this:
+      description: >
+        Enter each shift on a new line in a readable format like:
 
-        - Monday July 22, 6:00 PM – Usher
-        - Saturday July 27, 9:00 AM – Greeter
-      placeholder: |
-        - Monday July 22, 6:00 PM – Usher
-        - Saturday July 27, 9:00 AM – Greeter
+        Monday July 22, 6:00 PM – Usher
+        Saturday July 27, 9:00 AM – Greeter
+      placeholder: "e.g. Monday July 22, 6:00 PM – Usher"
     validations:
       required: true
