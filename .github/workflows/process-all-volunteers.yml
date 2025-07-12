@@ -30,7 +30,7 @@ jobs:
 
       - name: Process all volunteers from YAML
         run: |
-          python -c "
+          cat <<EOF | python
 import yaml
 import subprocess
 
@@ -48,7 +48,7 @@ for v in volunteers:
         '--shifts', str(shifts),
         '--notify_sms'
     ])
-"
+EOF
 
       - name: Generate calendar files
         run: python generate_calendar.py
