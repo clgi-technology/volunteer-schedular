@@ -1,0 +1,186 @@
+
+name: 🔐 Quality Gate – Lint, Test, Audit, Security
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  setup:
+    name: 🛠️ Setup
+    runs-on: ubuntu-latest
+    outputs:
+      node-version: 18
+      python-version: 3.11
+    steps:
+      - run: echo "Setup done"
+
+  codeql:
+    name: 🧠 CodeQL Security Scan
+    runs-on: ubuntu-latest
+    needs: setup
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript', 'python', 'powershell' ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+      - uses: github/codeql-action/autobuild@v3
+      - uses: github/codeql-action/analyze@v3
+
+  lint:
+    name: 🧼 Lint (Super-Linter + ShellCheck)
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/super-linter@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BRANCH: main
+          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_YAML: true
+          VALIDATE_DOCKERFILE: true
+          VALIDATE_MARKDOWN: true
+          VALIDATE_POWERSHELL: true
+          VALIDATE_JAVASCRIPT_ES: true
+          VALIDATE_JSON: true
+          VALIDATE_HTML: true
+          VALIDATE_CSS: true
+          VALIDATE_SHELL_SH: true
+      - name: Run ShellCheck (for .sh)
+        uses: ludeeus/action-shellcheck@v2
+
+  test_and_coverage:
+    name: 🧪 Lambda Tests + Coverage
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Run Jest in all Lambda functions
+        run: |
+          for dir in serverless/*/; do
+            cd "$dir"
+            npm install
+            npm test -- --coverage
+            cd -
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-test-coverage
+          path: serverless/**/coverage/
+
+  node_audit:
+    name: 📦 npm Audit (Node.js Dependencies)
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Run npm audit
+        run: |
+          for dir in serverless/*/; do
+            cd "$dir"
+            npm install --ignore-scripts
+            npm audit --audit-level=high || exit 1
+            cd -
+
+  pip_audit:
+    name: 🐍 pip-audit (Python Dependencies)
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pip-audit
+      - run: pip-audit || exit 1
+
+  php_audit:
+    name: 🐘 Composer Audit (WordPress/PHP)
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+      - run: composer install || true
+      - run: composer audit || exit 1
+
+  secretscan:
+    name: 🔐 Secret Scan (TruffleHog)
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@v3
+        with:
+          path: .
+          base: HEAD~10
+  docker_trivy_scan:
+    name: 🐳 Docker Image Vulnerability Scan (Trivy)
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Images (Locally)
+        run: |
+          docker build -t church-nginx docker/nginx
+          docker build -t church-wp docker/wordpress
+          docker build -t church-mysql docker/mysql
+
+      - name: Install Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          version: '0.50.0'
+
+      - name: Scan church-nginx
+        run: trivy image --exit-code 1 --severity CRITICAL,HIGH church-nginx
+
+      - name: Scan church-wp
+        run: trivy image --exit-code 1 --severity CRITICAL,HIGH church-wp
+
+      - name: Scan church-mysql
+        run: trivy image --exit-code 1 --severity CRITICAL,HIGH church-mysql
+  post_scan_tests:
+    name: 🧪 Post-Scan Integration Tests
+    runs-on: ubuntu-latest
+    needs: [codeql, lint, node_audit, pip_audit, php_audit, secretscan, docker_trivy_scan]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install dependencies and run integration tests
+        run: |
+          # Example: run tests in your main WordPress theme repo or serverless folder
+          cd wordpress-theme
+          npm install || true  # if you have JS tests here
+          npm test || exit 1
+
+          # Or run any custom integration tests
+          # e.g., curl calls to local Docker containers or AWS test scripts
