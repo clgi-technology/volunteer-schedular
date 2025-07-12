@@ -30,25 +30,9 @@ jobs:
 
       - name: Process all volunteers from YAML
         run: |
-          cat <<EOF | python
-import yaml
-import subprocess
-
-with open('volunteer_input.yaml') as f:
-    volunteers = yaml.safe_load(f)
-
-for v in volunteers:
-    name = v['name']
-    phone = v['phone']
-    shifts = v['shifts']
-    subprocess.run([
-        'python', 'volunteer_schedule.py',
-        '--name', name,
-        '--phone', phone,
-        '--shifts', str(shifts),
-        '--notify_sms'
-    ])
-EOF
+          python -c "import yaml, subprocess; \
+with open('volunteer_input.yaml') as f: volunteers = yaml.safe_load(f); \
+[subprocess.run(['python', 'volunteer_schedule.py', '--name', v['name'], '--phone', v['phone'], '--shifts', str(v['shifts']), '--notify_sms']) for v in volunteers]"
 
       - name: Generate calendar files
         run: python generate_calendar.py
