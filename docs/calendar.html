@@ -2,48 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Volunteer Schedule Calendar</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 1em;
-      background-color: #f9f9f9;
-    }
-    h1 {
-      text-align: center;
-      color: #333;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 1em;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #28a745;
-      color: white;
-    }
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-    select, input[type="date"] {
-      margin: 0.5em 1em 1em 0;
-      padding: 0.5em;
-      font-size: 1em;
-    }
-    .filters {
-      text-align: center;
-      margin-bottom: 1em;
-    }
-    .back-link {
-      text-align: center;
-      margin-top: 2em;
-    }
+    body { font-family: Arial, sans-serif; padding: 1em; background: #f9f9f9; }
+    h1 { text-align: center; color: #333; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1em; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #28a745; color: white; }
+    tr:nth-child(even) { background-color: #f2f2f2; }
+    .filters { text-align: center; margin-bottom: 1em; }
+    .back-link { text-align: center; margin-top: 2em; }
   </style>
 </head>
 <body>
@@ -83,37 +51,41 @@
 let volunteerData = [];
 
 fetch('volunteer_schedule.json')
-  .then(response => response.json())
+  .then(response => {
+    if (!response.ok) throw new Error('Failed to load JSON');
+    return response.json();
+  })
   .then(data => {
     volunteerData = data;
     renderCalendar(volunteerData);
+  })
+  .catch(error => {
+    document.getElementById('calendar-body').innerHTML = `<tr><td colspan="4" style="color:red;">${error.message}</td></tr>`;
   });
 
 function renderCalendar(data) {
-  const tableBody = document.getElementById('calendar-body');
-  tableBody.innerHTML = '';
+  const tbody = document.getElementById('calendar-body');
+  tbody.innerHTML = '';
   data.forEach(entry => {
     const row = document.createElement('tr');
-    row.innerHTML = 
+    row.innerHTML = `
       <td>${entry.date}</td>
       <td>${entry.time}</td>
       <td>${entry.volunteer}</td>
       <td>${entry.role}</td>
-    ;
-    tableBody.appendChild(row);
+    `;
+    tbody.appendChild(row);
   });
 }
 
 function filterCalendar() {
   const selectedRole = document.getElementById('role-filter').value;
   const selectedDate = document.getElementById('date-filter').value;
-
   let filtered = volunteerData;
 
   if (selectedRole !== 'All') {
     filtered = filtered.filter(e => e.role === selectedRole);
   }
-
   if (selectedDate) {
     filtered = filtered.filter(e => e.date === selectedDate);
   }
