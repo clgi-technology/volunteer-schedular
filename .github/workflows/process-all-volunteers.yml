@@ -28,27 +28,28 @@ jobs:
           pip install -r requirements.txt
           pip install pyyaml
 
-      - name: Process all volunteers from YAML
+      - name: Write Python script to process volunteers
         run: |
-          cat <<EOF | python
-import yaml
-import subprocess
+          echo "import yaml" > process.py
+          echo "import subprocess" >> process.py
+          echo "" >> process.py
+          echo "with open('volunteer_input.yaml') as f:" >> process.py
+          echo "    volunteers = yaml.safe_load(f)" >> process.py
+          echo "" >> process.py
+          echo "for v in volunteers:" >> process.py
+          echo "    name = v['name']" >> process.py
+          echo "    phone = v['phone']" >> process.py
+          echo "    shifts = v['shifts']" >> process.py
+          echo "    subprocess.run([" >> process.py
+          echo "        'python', 'volunteer_schedule.py'," >> process.py
+          echo "        '--name', name," >> process.py
+          echo "        '--phone', phone," >> process.py
+          echo "        '--shifts', str(shifts)," >> process.py
+          echo "        '--notify_sms'" >> process.py
+          echo "    ])" >> process.py
 
-with open('volunteer_input.yaml') as f:
-    volunteers = yaml.safe_load(f)
-
-for v in volunteers:
-    name = v['name']
-    phone = v['phone']
-    shifts = v['shifts']
-    subprocess.run([
-        'python', 'volunteer_schedule.py',
-        '--name', name,
-        '--phone', phone,
-        '--shifts', str(shifts),
-        '--notify_sms'
-    ])
-EOF
+      - name: Run volunteer processing script
+        run: python process.py
 
       - name: Generate calendar files
         run: python generate_calendar.py
