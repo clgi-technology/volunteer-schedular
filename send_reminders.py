@@ -30,22 +30,24 @@ def send_sms(to_phone, message_body):
 
 for volunteer in volunteers:
     name = volunteer.get("name", "Volunteer")
-    phone = volunteer.get("phone", "").strip()
+    phone = str(volunteer.get("phone", "") or "").strip()  # handles None, int, or missing
     shifts = volunteer.get("shifts", [])
+    wants_sms = volunteer.get("notify_sms", False)
 
-    if not phone:
-        print(f"ℹ️ Skipping {name} — no phone number provided.")
-        continue  # skip volunteers without phone
+    if not phone or not wants_sms:
+        print(f"ℹ️ Skipping {name} — no SMS notification requested or phone number missing.")
+        continue
 
     for shift in shifts:
-        # Expecting dict with keys: date (YYYY-MM-DD), time (HH:MM 24h), role
         try:
             shift_datetime = datetime.strptime(f"{shift['date']} {shift['time']}", "%Y-%m-%d %H:%M")
         except Exception as e:
             print(f"⚠️ Skipping shift with bad format: {shift} ({e})")
             continue
 
-        # Send SMS reminder if the shift time matches the reminder time exactly
         if shift_datetime == reminder_time:
-            message = f"Hi {name}, reminder: your volunteer shift as {shift['role']} starts at {shift['time']} on {shift['date']}."
+            message = (
+                f"Hi {name}, reminder: your volunteer shift as {shift['role']} "
+                f"starts at {shift['time']} on {shift['date']}."
+            )
             send_sms(phone, message)
