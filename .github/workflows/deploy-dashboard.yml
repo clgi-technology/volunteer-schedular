@@ -9,7 +9,7 @@ on:
 
 env:
   IMAGE_NAME: ghcr.io/clgi-technology/volunteer-dashboard
-  IMAGE_TAG: latest
+  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
   build-and-push:
@@ -54,4 +54,4 @@ jobs:
             docker pull ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
             docker stop volunteer-dashboard || true
             docker rm volunteer-dashboard || true
-            docker run -d --name volunteer-dashboard -p 8080:8080 ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            docker run -d --restart unless-stopped --name volunteer-dashboard -p 8080:8080 ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
