@@ -3,18 +3,20 @@ import os
 from flask import Flask, render_template_string, request, redirect, url_for
 
 app = Flask(__name__)
-
 SCHEDULE_FILE = 'volunteer_input.yaml'
 
 def load_schedule():
     if os.path.exists(SCHEDULE_FILE):
-        with open(SCHEDULE_FILE, 'r') as f:
-            return yaml.safe_load(f) or []
+        try:
+            with open(SCHEDULE_FILE, 'r') as f:
+                return yaml.safe_load(f) or []
+        except yaml.YAMLError:
+            return []
     return []
 
 def save_schedule(schedule):
     with open(SCHEDULE_FILE, 'w') as f:
-        yaml.safe_dump(schedule, f)
+        yaml.safe_dump(schedule, f, sort_keys=False)
 
 @app.route('/')
 def index():
@@ -41,6 +43,7 @@ def index():
                 <tr>
                     <th>Name</th>
                     <th>Phone</th>
+                    <th>Notify SMS</th>
                     <th>Shifts</th>
                     <th>Actions</th>
                 </tr>
@@ -48,20 +51,23 @@ def index():
             <tbody>
                 {% for vol in schedule %}
                 <tr>
-                    <td>{{ vol.name }}</td>
-                    <td>{{ vol.phone }}</td>
+                    <td>{{ vol.get('name', '') }}</td>
+                    <td>{{ vol.get('phone', '') }}</td>
+                    <td>{{ vol.get('notify_sms', False) }}</td>
                     <td>
                         <ul>
-                        {% for shift in vol.shifts %}
+                        {% for shift in vol.get('shifts', []) %}
                             <li>{{ shift.date }} {{ shift.time }} - {{ shift.role }}</li>
                         {% endfor %}
                         </ul>
                     </td>
                     <td>
                         <form method="post" action="{{ url_for('delete_volunteer') }}">
-                            <input type="hidden" name="name" value="{{ vol.name }}">
-                            <input type="hidden" name="phone" value="{{ vol.phone }}">
-                            <button type="submit" onclick="return confirm('Delete volunteer {{ vol.name }}?')">Delete</button>
+                            <input type="hidden" name="name" value="{{ vol.get('name', '') }}">
+                            <input type="hidden" name="phone" value="{{ vol.get('phone', '') }}">
+                            <button type="submit" onclick="return confirm('Are you sure you want to delete {{ vol.get('name', '') }}?')">
+                                Delete
+                            </button>
                         </form>
                     </td>
                 </tr>
@@ -77,8 +83,9 @@ def delete_volunteer():
     name = request.form.get('name')
     phone = request.form.get('phone')
     schedule = load_schedule()
-    schedule = [v for v in schedule if not (v.get('name') == name and v.get('phone') == phone)]
-    save_schedule(schedule)
+
+    updated = [v for v in schedule if not (v.get('name') == name and v.get('phone') == phone)]
+    save_schedule(updated)
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
