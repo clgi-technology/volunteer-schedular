@@ -52,5 +52,11 @@
     "time": "18:00",
     "volunteer": "Jane Doe",
     "role": "Usher"
+  },
+  {
+    "date": "2025-07-25",
+    "time": "20:00",
+    "volunteer": "Ron Doe",
+    "role": "Trustee"
   }
 ]

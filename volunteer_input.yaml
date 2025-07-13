@@ -47,3 +47,9 @@
   - date: '2025-07-22'
     role: Usher
     time: '18:00'
+- name: Ron Doe
+  phone: '+5127855597'
+  shifts:
+  - date: '2025-07-25'
+    role: Trustee
+    time: '20:00'
