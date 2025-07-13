@@ -20,6 +20,15 @@ body:
       placeholder: "+1234567890"
     # validations omitted to make it optional
 
+  - type: checkbox
+    id: notify_sms
+    attributes:
+      label: Notify me via SMS
+      description: Check this box if you want to receive SMS reminders for your shifts.
+      options:
+        - label: Yes, send me SMS reminders
+          value: true
+
   - type: textarea
     id: shifts
     attributes:
