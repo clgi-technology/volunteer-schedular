@@ -58,6 +58,7 @@ def parse_shifts(lines):
 def parse_issue_body(body):
     lines = body.splitlines()
     name = phone = ""
+    notify_sms = False
     shifts = []
     mode = None
     for l in lines:
@@ -65,6 +66,7 @@ def parse_issue_body(body):
         if l.startswith("###"):
             if "Full Name" in l: mode = 'name'
             elif "Phone Number" in l: mode = 'phone'
+            elif "notify via sms" in l.lower(): mode = 'notify_sms'
             elif "shifts" in l.lower(): mode = 'shifts'
             else: mode = None
             continue
@@ -72,11 +74,14 @@ def parse_issue_body(body):
             name = l
         elif mode == 'phone' and l and not phone:
             phone = l
+        elif mode == 'notify_sms' and l:
+            if l.lower() in ("yes", "true", "1"):
+                notify_sms = True
         elif mode == 'shifts' and l:
             shifts.append(l.lstrip('- ').strip())
     if not name or not shifts:
         sys.exit('❌ Missing name or shifts in issue body.')
-    return name, phone, shifts
+    return name, phone, shifts, notify_sms
 
 def send_sms(name, phone, shifts):
     user = os.getenv('CLICKSEND_USERNAME')
@@ -105,26 +110,32 @@ def main():
     args = ap.parse_args()
 
     if args.issue_body:
-        name, phone, raw = parse_issue_body(args.issue_body)
+        name, phone, raw, notify_sms = parse_issue_body(args.issue_body)
     else:
         if not args.name or not args.shifts:
             sys.exit('❌ Missing required --name or --shifts')
         name = args.name.strip()
         phone = (args.phone or "").strip()
         raw = args.shifts
+        notify_sms = args.notify_sms
 
     shifts = parse_shifts(raw)
 
     sched = load_schedule()
-    sched.append({
+
+    entry = {
         'name': name,
         'phone': phone,
         'shifts': shifts
-    })
+    }
+    if notify_sms:
+        entry['notify_sms'] = True
+
+    sched.append(entry)
     save_schedule(sched)
     export_json(sched)
 
-    if args.notify_sms:
+    if notify_sms:
         send_sms(name, phone, shifts)
 
     print(f"✅ Recorded {name} with {len(shifts)} shift(s).")
