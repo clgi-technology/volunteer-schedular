@@ -1,38 +1,33 @@
+---
 name: Parse Volunteer Submission
-
 on:
   issues:
-    types: [opened]
-
+    types:
+      - opened
 permissions:
   contents: write
-
 jobs:
   parse-submission:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
-
       - name: Install dependencies
         run: |
           pip install clicksend-client ics pyyaml
-
       - name: Process submission
         run: |
-          cat <<EOF | python process_submission.py --issue-body - --notify-sms
-### Full Name
-Jane Doe
+          echo |
+            ### Full Name
+            John Doe
 
-### Phone Number
-_No response_
+            ### Phone Number
+            _No response_
 
-### What shifts are you available for?
-Monday July 22, 2025, 9:00 PM – Usher
-EOF
+            ### What shifts are you available for?
+            Monday July 22, 2025, 9:00 PM – Usher
+          | python process_submission.py --issue-body - --notify-sms
