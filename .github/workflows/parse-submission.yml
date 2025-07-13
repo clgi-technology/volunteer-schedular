@@ -59,28 +59,32 @@ jobs:
         run: |
           echo "✅ Running submission parser..."
 
-          PARSED=$(echo "${{ steps.extract.outputs.shifts }}" | python3 -c "
-import sys, json, re
-from datetime import datetime
+          cat << 'EOF' > parse_shifts.py
+          import sys
+          import json
+          import re
+          from datetime import datetime
 
-lines = sys.stdin.read().strip().split('\n')
-shifts = []
+          lines = sys.stdin.read().strip().split('\n')
+          shifts = []
 
-for line in lines:
-    try:
-        parts = re.split(r'\s+[-–—]\s+', line)
-        if len(parts) == 2:
-            dt = datetime.strptime(parts[0].strip(), '%A %B %d, %Y, %I:%M %p')
-            shifts.append({
-                'date': dt.strftime('%Y-%m-%d'),
-                'time': dt.strftime('%H:%M'),
-                'role': parts[1].strip()
-            })
-    except Exception as e:
-        print(f'Skipping invalid line: {line} ({e})', file=sys.stderr)
+          for line in lines:
+              try:
+                  parts = re.split(r'\s+[-–—]\s+', line)
+                  if len(parts) == 2:
+                      dt = datetime.strptime(parts[0].strip(), '%A %B %d, %Y, %I:%M %p')
+                      shifts.append({
+                          'date': dt.strftime('%Y-%m-%d'),
+                          'time': dt.strftime('%H:%M'),
+                          'role': parts[1].strip()
+                      })
+              except Exception as e:
+                  print(f'Skipping invalid line: {line} ({e})', file=sys.stderr)
 
-print(json.dumps(shifts))
-")
+          print(json.dumps(shifts))
+          EOF
+
+          PARSED=$(echo "${{ steps.extract.outputs.shifts }}" | python3 parse_shifts.py)
 
           echo "📦 Parsed JSON shifts: $PARSED"
 
