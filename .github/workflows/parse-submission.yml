@@ -24,11 +24,6 @@ jobs:
         run: |
           pip install clicksend-client ics pyyaml
 
-      - name: Install yq for YAML parsing
-        run: |
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          sudo chmod +x /usr/local/bin/yq
-
       - name: Save issue body to file
         run: echo "${{ github.event.issue.body }}" > issue_body.txt
 
@@ -49,17 +44,16 @@ jobs:
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git push origin HEAD:${{ github.ref_name }}
 
-      - name: Print updated volunteer_input.yaml
-        run: cat volunteer_input.yaml
+      - name: Print last 20 lines of volunteer_input.yaml
+        run: tail -n 20 volunteer_input.yaml || echo "File not found"
 
-      - name: Send SMS notification to last volunteer who opted in
-        if: contains(github.event.issue.body, 'Notify me via SMS')
+      - name: Print last 20 lines of volunteer_schedule.json
+        run: tail -n 20 docs/volunteer_schedule.json || echo "File not found"
+
+      - name: Send SMS notifications to volunteers who opted in
         env:
           CLICKSEND_USERNAME: ${{ secrets.CLICKSEND_USERNAME }}
           CLICKSEND_API_KEY: ${{ secrets.CLICKSEND_API_KEY }}
         run: |
-          # Find the last volunteer with notify_sms: true in volunteer_input.yaml
-          phone=$(yq e 'reverse | .[] | select(.notify_sms == true) | .phone' volunteer_input.yaml | head -n 1)
-          name=$(yq e 'reverse | .[] | select(.notify_sms == true) | .name' volunteer_input.yaml | head -n 1)
-          echo "Sending SMS to $name at $phone"
-          python send_sms.py "$phone" "$name"
+          pip install clicksend-client pyyaml
+          python send_sms.py
