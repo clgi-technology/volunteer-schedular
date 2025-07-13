@@ -26,4 +26,12 @@ jobs:
 
       - name: Process submission
         run: |
-          echo "${{ github.event.issue.body }}" | python process_submission.py --issue-body - --notify-sms
+          echo "### Full Name
+Jane Doe
+
+### Phone Number
+_No response_
+
+### What shifts are you available for?
+Monday July 22, 2025, 9:00 PM – Usher
+" | python process_submission.py --issue-body - --notify-sms
