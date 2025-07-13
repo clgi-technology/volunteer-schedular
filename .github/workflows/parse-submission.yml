@@ -55,7 +55,7 @@ jobs:
           echo "$CLEANED_SHIFTS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Parse and submit to volunteer_schedule.py
+      - name: Parse shifts and run volunteer_schedule.py
         run: |
           echo "✅ Running submission parser..."
 
@@ -77,7 +77,7 @@ for line in lines:
                 'role': parts[1].strip()
             })
     except Exception as e:
-        print(f'⚠️ Skipping invalid line: {line} ({e})', file=sys.stderr)
+        print(f'Skipping invalid line: {line} ({e})', file=sys.stderr)
 
 print(json.dumps(shifts))
 ")
