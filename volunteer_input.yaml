@@ -17,12 +17,12 @@
   notify_sms: true
   phone: '+15127855597'
   shifts:
-  - date: '2025-07-07'
+  - date: '2025-07-12'
     role: Usher
-    time: '18:00'
-  - date: '2025-07-09'
+    time: '23:00'
+  - date: '2025-07-12'
     role: Greeter
-    time: 09:00
+    time: 23:00
 - name: Jane Doe
   phone: _No response_
   shifts:
