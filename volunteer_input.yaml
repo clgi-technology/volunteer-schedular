@@ -15,7 +15,7 @@
     time: '14:00'
 - name: John Doe
   notify_sms: true
-  phone: '+1234567890'
+  phone: '+15127855597'
   shifts:
   - date: '2025-07-07'
     role: Usher
