@@ -43,10 +43,8 @@ jobs:
           git add volunteer_input.yaml docs/volunteer_schedule.json
           git diff --staged
           git commit -m "Update volunteer schedule after new submission" || echo "No changes to commit"
-          git push
-        env:
-          # Use GitHub token for push authentication
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git push origin HEAD:${{ github.ref_name }}
 
       - name: Print updated volunteer_input.yaml
         run: cat volunteer_input.yaml
