@@ -25,7 +25,7 @@ body:
     attributes:
       label: What shifts are you available for?
       description: >
-        Copy, Paste and Edit this date and time keeping the same format and enter each shift on a new line:
+        Copy, Paste and Edit this date and time keeping the same format and enter each availability on a new line:
 
         Monday July 22, 2025, 6:00 PM – Usher
       placeholder: "e.g. Monday July 22, 2025, 6:00 PM – Usher"
