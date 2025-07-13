@@ -28,5 +28,11 @@
     "time": "09:00",
     "volunteer": "John Doe",
     "role": "Greeter"
+  },
+  {
+    "date": "2025-07-22",
+    "time": "18:00",
+    "volunteer": "Jane Doe",
+    "role": "Usher"
   }
 ]
