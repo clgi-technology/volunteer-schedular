@@ -55,16 +55,34 @@ jobs:
           echo "$CLEANED_SHIFTS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Run volunteer_schedule.py script
+      - name: Parse shifts and run script
         run: |
+          echo "${{ steps.extract.outputs.shifts }}" > shifts.txt
+
+          PARSED=$(python3 -c "
+import sys, json, re
+from datetime import datetime
+lines = open('shifts.txt').read().strip().split('\n')
+shifts = []
+for line in lines:
+    parts = re.split(r'\s+[-–—]\s+', line)
+    if len(parts) == 2:
+        try:
+            dt = datetime.strptime(parts[0].strip(), '%A %B %d, %Y, %I:%M %p')
+            shifts.append({
+                'date': dt.strftime('%Y-%m-%d'),
+                'time': dt.strftime('%H:%M'),
+                'role': parts[1].strip()
+            })
+        except Exception as e:
+            print(f'⚠️ Skipping invalid line: {line} ({e})', file=sys.stderr)
+print(json.dumps(shifts))
+")
+
+          echo "📦 Parsed JSON shifts: $PARSED"
+
           python volunteer_schedule.py \
             --name "${{ steps.extract.outputs.name }}" \
             --phone "${{ steps.extract.outputs.phone }}" \
-            --shifts "$(echo "${{ steps.extract.outputs.shifts }}" | python3 -c "import sys,json; import re; from datetime import datetime; lines=sys.stdin.read().strip().split('\n'); shifts=[]; \
-for line in lines: \
-  parts = re.split(r'\\s+[-–—]\\s+', line); \
-  if len(parts) == 2: \
-    dt = datetime.strptime(parts[0].strip(), '%A %B %d, %Y, %I:%M %p').strftime('%Y-%m-%d %H:%M'); \
-    shifts.append({'date': dt.split()[0], 'time': dt.split()[1], 'role': parts[1].strip()}); \
-print(json.dumps(shifts))") \
+            --shifts "$PARSED" \
             --notify_sms
