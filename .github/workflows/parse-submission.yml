@@ -55,27 +55,30 @@ jobs:
           echo "$CLEANED_SHIFTS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Parse shifts and run script
+      - name: Parse and submit to volunteer_schedule.py
         run: |
-          echo "${{ steps.extract.outputs.shifts }}" > shifts.txt
+          echo "✅ Running submission parser..."
 
-          PARSED=$(python3 -c "
+          PARSED=$(echo "${{ steps.extract.outputs.shifts }}" | python3 -c "
 import sys, json, re
 from datetime import datetime
-lines = open('shifts.txt').read().strip().split('\n')
+
+lines = sys.stdin.read().strip().split('\n')
 shifts = []
+
 for line in lines:
-    parts = re.split(r'\s+[-–—]\s+', line)
-    if len(parts) == 2:
-        try:
+    try:
+        parts = re.split(r'\s+[-–—]\s+', line)
+        if len(parts) == 2:
             dt = datetime.strptime(parts[0].strip(), '%A %B %d, %Y, %I:%M %p')
             shifts.append({
                 'date': dt.strftime('%Y-%m-%d'),
                 'time': dt.strftime('%H:%M'),
                 'role': parts[1].strip()
             })
-        except Exception as e:
-            print(f'⚠️ Skipping invalid line: {line} ({e})', file=sys.stderr)
+    except Exception as e:
+        print(f'⚠️ Skipping invalid line: {line} ({e})', file=sys.stderr)
+
 print(json.dumps(shifts))
 ")
 
