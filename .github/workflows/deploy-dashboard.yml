@@ -9,7 +9,7 @@ on:
 
 env:
   IMAGE_NAME: ghcr.io/clgi-technology/volunteer-dashboard
-  IMAGE_TAG: ${{ github.sha }}
+  IMAGE_TAG: latest
 
 jobs:
   build-and-push:
@@ -42,9 +42,9 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: ${{ secrets.SERVER_HOST != '' }}
     steps:
       - name: Deploy to server via SSH
+        if: ${{ secrets.SERVER_HOST != '' }}
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SERVER_HOST }}
