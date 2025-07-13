@@ -1,24 +1,25 @@
 # Use official Python 3.11 image
 FROM python:3.11-slim
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=production
+# Environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    FLASK_APP=app.py \
+    FLASK_RUN_HOST=0.0.0.0 \
+    FLASK_RUN_PORT=8080
 
 # Set working directory
 WORKDIR /app
 
-# Copy application files
+# Copy files into container
 COPY . /app
 
 # Install dependencies
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
-# Expose port 8080
+# Expose port for container
 EXPOSE 8080
 
-# Run the Flask app
-CMD ["flask", "run", "--host=0.0.0.0", "--port=8080"]
+# Run Flask app in production mode with Gunicorn
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8080", "app:app"]
