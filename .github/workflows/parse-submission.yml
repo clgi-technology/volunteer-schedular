@@ -26,4 +26,4 @@ jobs:
 
       - name: Process submission
         run: |
-          echo "${{ github.event.issue.body }}" | python process_submission.py --issue-body - --notify_sms
+          echo "${{ github.event.issue.body }}" | python process_submission.py --issue-body - --notify-sms
