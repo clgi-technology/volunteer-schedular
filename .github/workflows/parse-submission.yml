@@ -26,12 +26,13 @@ jobs:
 
       - name: Process submission
         run: |
-          echo "### Full Name
-Jane Doe
+          cat <<EOF | python process_submission.py --issue-body - --notify-sms
+          ### Full Name
+          Jane Doe
 
-### Phone Number
-_No response_
+          ### Phone Number
+          _No response_
 
-### What shifts are you available for?
-Monday July 22, 2025, 9:00 PM – Usher
-" | python process_submission.py --issue-body - --notify-sms
+          ### What shifts are you available for?
+          Monday July 22, 2025, 9:00 PM – Usher
+          EOF
