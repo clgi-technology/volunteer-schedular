@@ -18,16 +18,15 @@ body:
       label: Phone Number
       description: Enter your phone number including country code to receive SMS notification reminder beforehand (optional)
       placeholder: "+1234567890"
-    # validations omitted to make it optional
 
-  - type: checkbox
+  - type: dropdown
     id: notify_sms
     attributes:
       label: Notify me via SMS
-      description: Check this box if you want to receive SMS reminders for your shifts.
+      description: Would you like to receive SMS reminders for your shifts?
       options:
-        - label: Yes, send me SMS reminders
-          value: true
+        - Yes
+        - No
 
   - type: textarea
     id: shifts
