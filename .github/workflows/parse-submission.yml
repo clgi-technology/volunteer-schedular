@@ -24,7 +24,14 @@ jobs:
         run: |
           pip install clicksend-client ics pyyaml
 
-      - name: Process submission
+      - name: Run submission parser with example data
         run: |
-          echo "### Full Name\nJane Doe\n\n### Phone Number\n_No response_\n\n### What shifts are you available for?\nMonday July 22, 2025, 6:00 PM – Usher" \
-            | python process_submission.py --issue-body - --notify-sms
+          python process_submission.py --issue-body "$(printf '%s\n' \
+            '### Full Name' \
+            'Jane Doe' \
+            '' \
+            '### Phone Number' \
+            '_No response_' \
+            '' \
+            '### What shifts are you available for?' \
+            'Monday July 22, 2025, 6:00 PM – Usher')" --notify-sms
