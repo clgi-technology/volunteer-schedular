@@ -57,5 +57,6 @@
   phone: '+15127855597'
   shifts:
   - date: '2025-07-12'
+    time: '23:20'
     role: Livestream
-    time: '23:15'
+  notify_sms: true
