@@ -1,144 +1,153 @@
-#!/usr/bin/env python3
-import os
 import sys
-import json
-import yaml
 import argparse
+import yaml
+import json
 import re
 from datetime import datetime
-from clicksend_client import SMSApi, SmsMessage, SmsMessageCollection, Configuration, ApiClient
-from ics import Calendar, Event
 
-SCHEDULE_FILE = 'volunteer_input.yaml'
-DOCS_JSON = 'docs/volunteer_schedule.json'
+SCHEDULE_YAML = 'volunteer_input.yaml'
+SCHEDULE_JSON = 'docs/volunteer_schedule.json'
 
 def load_schedule():
-    if os.path.exists(SCHEDULE_FILE):
-        with open(SCHEDULE_FILE) as f:
-            return yaml.safe_load(f) or []
-    return []
+    try:
+        with open(SCHEDULE_YAML, 'r') as f:
+            data = yaml.safe_load(f)
+            return data if data else []
+    except FileNotFoundError:
+        return []
 
 def save_schedule(schedule):
-    with open(SCHEDULE_FILE, 'w') as f:
-        yaml.safe_dump(schedule, f)
+    with open(SCHEDULE_YAML, 'w') as f:
+        yaml.safe_dump(schedule, f, sort_keys=False)
 
 def export_json(schedule):
-    flat = []
-    for entry in schedule:
-        for sh in entry.get('shifts', []):
-            flat.append({
-                'date': sh['date'],
-                'time': sh['time'],
-                'volunteer': entry['name'],
-                'role': sh['role']
-            })
-    os.makedirs(os.path.dirname(DOCS_JSON), exist_ok=True)
-    with open(DOCS_JSON, 'w') as f:
-        json.dump(flat, f, indent=2)
+    # Convert shifts time to int if string is numeric (like '1380' -> 1380)
+    json_data = []
+    for vol in schedule:
+        for shift in vol.get('shifts', []):
+            time_val = shift.get('time')
+            if isinstance(time_val, str) and time_val.isdigit():
+                shift['time'] = int(time_val)
+        json_data.extend([
+            {
+                "date": shift.get('date'),
+                "time": shift.get('time'),
+                "volunteer": vol.get('name'),
+                "role": shift.get('role')
+            }
+            for shift in vol.get('shifts', [])
+        ])
+    with open(SCHEDULE_JSON, 'w') as f:
+        json.dump(json_data, f, indent=2)
 
-def parse_shifts(lines):
-    out = []
-    for line in lines:
-        parts = re.split(r'\s+[-–—]\s+', line.strip())
-        if len(parts) != 2:
+def parse_shifts(shift_lines):
+    shifts = []
+    # Example line: "Saturday July 12, 2025, 11:15 PM – Livestream"
+    pattern = re.compile(r"^(.*?),\s*(\d{1,2}:\d{2}\s*[APMapm\.]{2,4})\s*[-–—]\s*(.*)$")
+    for line in shift_lines:
+        m = pattern.match(line)
+        if not m:
             continue
+        date_str, time_str, role = m.groups()
+        # Parse date to ISO YYYY-MM-DD
         try:
-            dt = datetime.strptime(parts[0].strip(), '%A %B %d, %Y, %I:%M %p')
+            dt_date = datetime.strptime(date_str.strip(), "%A %B %d, %Y")
+            date_fmt = dt_date.strftime("%Y-%m-%d")
         except ValueError:
+            # fallback, skip if bad date
             continue
-        out.append({
-            'date': dt.strftime('%Y-%m-%d'),
-            'time': dt.strftime('%H:%M'),
-            'role': parts[1].strip()
+        # Parse time to 24h HH:MM
+        try:
+            dt_time = datetime.strptime(time_str.strip().replace('.', ''), "%I:%M %p")
+            time_fmt = dt_time.strftime("%H:%M")
+        except ValueError:
+            # fallback, skip if bad time
+            continue
+        shifts.append({
+            'date': date_fmt,
+            'time': time_fmt,
+            'role': role.strip()
         })
-    if not out:
-        sys.exit('❌ No valid shifts parsed.')
-    return out
+    if not shifts:
+        sys.exit("❌ No valid shifts parsed.")
+    return shifts
 
 def parse_issue_body(body):
     lines = body.splitlines()
-    name = phone = ""
+    name = ""
+    phone = ""
     notify_sms = False
     shifts = []
     mode = None
     for l in lines:
         l = l.strip()
         if l.startswith("###"):
-            if "Full Name" in l: mode = 'name'
-            elif "Phone Number" in l: mode = 'phone'
-            elif "notify via sms" in l.lower(): mode = 'notify_sms'
-            elif "shifts" in l.lower(): mode = 'shifts'
-            else: mode = None
+            if "Full Name" in l:
+                mode = 'name'
+            elif "Phone Number" in l:
+                mode = 'phone'
+            elif "Notify me via SMS" in l:
+                mode = 'notify_sms'
+            elif "shifts" in l.lower():
+                mode = 'shifts'
+            else:
+                mode = None
             continue
+
         if mode == 'name' and l and not name:
             name = l
         elif mode == 'phone' and l and not phone:
             phone = l
         elif mode == 'notify_sms' and l:
-            if l.lower() in ("yes", "true", "1"):
-                notify_sms = True
+            notify_sms = l.lower() in ('yes', 'true', '1')
         elif mode == 'shifts' and l:
-            shifts.append(l.lstrip('- ').strip())
-    if not name or not shifts:
-        sys.exit('❌ Missing name or shifts in issue body.')
-    return name, phone, shifts, notify_sms
+            # ignore any numeric-only lines (like '1s' etc)
+            if not re.match(r'^\d+s$', l):
+                shifts.append(l.lstrip('- ').strip())
 
-def send_sms(name, phone, shifts):
-    user = os.getenv('CLICKSEND_USERNAME')
-    key = os.getenv('CLICKSEND_API_KEY')
-    if not user or not key or not phone:
-        return
-    cfg = Configuration(); cfg.username = user; cfg.password = key
-    api = SMSApi(ApiClient(cfg))
-    msgs = []
-    for s in shifts:
-        dt = datetime.strptime(s['date'], '%Y-%m-%d').strftime('%A, %B %d, %Y')
-        msgs.append(SmsMessage(
-            source="python",
-            body=f"Hi {name}, you have a {s['role']} shift on {dt} at {s['time']}.",
-            to=phone
-        ))
-    api.sms_send_post(SmsMessageCollection(messages=msgs))
+    if not name:
+        sys.exit("❌ Missing Full Name in issue body.")
+    if not shifts:
+        sys.exit("❌ No shifts specified in issue body.")
+    return name, phone, notify_sms, shifts
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument('--issue-body', help='Full issue text')
-    ap.add_argument('--name', help='Volunteer name')
-    ap.add_argument('--phone', help='Optional phone')
-    ap.add_argument('--shifts', nargs='*', help='One or more "Day Month DD, YYYY, HH:MM AM/PM – Role" entries')
-    ap.add_argument('--notify-sms', action='store_true')
-    args = ap.parse_args()
+    parser = argparse.ArgumentParser(description="Process volunteer submission")
+    parser.add_argument('--issue-body', type=str, help="Full issue body text")
+    parser.add_argument('--name', type=str, help="Volunteer name (if no issue body)")
+    parser.add_argument('--phone', type=str, help="Phone number (if no issue body)")
+    parser.add_argument('--shifts', type=str, nargs='*', help="Shifts (if no issue body)")
+    parser.add_argument('--notify-sms', action='store_true', help="Send SMS notification")
+    args = parser.parse_args()
 
     if args.issue_body:
-        name, phone, raw, notify_sms = parse_issue_body(args.issue_body)
+        name, phone, notify_sms, raw_shifts = parse_issue_body(args.issue_body)
     else:
         if not args.name or not args.shifts:
-            sys.exit('❌ Missing required --name or --shifts')
+            sys.exit("❌ Missing required --name or --shifts")
         name = args.name.strip()
         phone = (args.phone or "").strip()
-        raw = args.shifts
         notify_sms = args.notify_sms
+        raw_shifts = args.shifts
 
-    shifts = parse_shifts(raw)
+    shifts = parse_shifts(raw_shifts)
 
-    sched = load_schedule()
+    schedule = load_schedule()
+    # Remove existing entry for same name and phone (optional)
+    schedule = [v for v in schedule if not (v.get('name') == name and v.get('phone') == phone)]
 
-    entry = {
+    new_volunteer = {
         'name': name,
         'phone': phone,
         'shifts': shifts
     }
     if notify_sms:
-        entry['notify_sms'] = True
+        new_volunteer['notify_sms'] = True
 
-    sched.append(entry)
-    save_schedule(sched)
-    export_json(sched)
-
-    if notify_sms:
-        send_sms(name, phone, shifts)
-
+    schedule.append(new_volunteer)
+    save_schedule(schedule)
+    export_json(schedule)
     print(f"✅ Recorded {name} with {len(shifts)} shift(s).")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
