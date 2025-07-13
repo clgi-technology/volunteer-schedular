@@ -60,3 +60,10 @@
     time: '23:20'
     role: Livestream
   notify_sms: true
+- name: Pastor Ron
+  phone: '+15127855597'
+  shifts:
+  - date: '2025-07-12'
+    time: '23:45'
+    role: Livestream
+  notify_sms: true
