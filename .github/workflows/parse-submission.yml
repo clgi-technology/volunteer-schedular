@@ -24,17 +24,15 @@ jobs:
         run: |
           pip install clicksend-client ics pyyaml
 
-      - name: Run submission parser with example data
+      - name: Save issue body to file
+        run: echo "${{ github.event.issue.body }}" > issue_body.txt
+
+      - name: Debug issue body content
+        run: cat issue_body.txt
+
+      - name: Run submission parser on real submission
         run: |
-          python process_submission.py --issue-body "$(printf '%s\n' \
-            '### Full Name' \
-            'Jane Doe' \
-            '' \
-            '### Phone Number' \
-            '_No response_' \
-            '' \
-            '### What shifts are you available for?' \
-            'Monday July 22, 2025, 6:00 PM – Usher')" --notify-sms
+          python process_submission.py --issue-body "$(cat issue_body.txt)" --notify-sms
 
       - name: Commit and push updated schedule files
         run: |
