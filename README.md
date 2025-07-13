@@ -41,9 +41,8 @@ This project enables volunteers to submit their availability for multiple roles,
 │ └── calendar_template.html
 ├── admin_dashboard.py
 ├── volunteer_input.yaml
-├── volunteer_schedule.py
 ├── send_reminders.py
-├── parse_issue.py
+├── process_submission.py
 ├── generate_calendar.py
 ├── requirements.txt
 ├── requirements-dev.txt
